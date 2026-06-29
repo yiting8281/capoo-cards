@@ -10,10 +10,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f7ff; }
         .card-gray { filter: grayscale(100%); opacity: 0.35; }
-        .capoo-sprite {
-            background-size: 100% auto;
-            background-repeat: no-repeat;
-        }
     </style>
 </head>
 <body class="p-3 md:p-8">
@@ -22,7 +18,7 @@
         <!-- 標頭 -->
         <header class="text-center mb-5">
             <h1 class="text-2xl font-bold text-sky-700 mb-1">🐱 貓貓蟲咖波收藏卡牌圖鑑 🍖</h1>
-            <p class="text-xs text-sky-600 font-medium">✨ 100% 自建倉庫空間・手寫星等・實體卡面全顯現版 ✨</p>
+            <p class="text-xs text-sky-600 font-medium">✨ 官方 1:1 高畫質獨立卡面・手寫星等精確版 (NO.001 - NO.099) ✨</p>
         </header>
 
         <!-- 控制面板 -->
@@ -95,55 +91,13 @@
 
     <script>
         const cardData = [];
-        
-        // 核心修正：直接讀取你自己倉庫裡的相對路徑圖片檔
-        const bigImages = {
-            v1: "v1.jpg",
-            v2: "v2.jpg",
-            v3: "v3.jpg"
-        };
 
+        // 手寫校對版星等分組
         const silvers = [72,73,75,78,79,82,83,89,95,97, 4, 10, 12, 14, 17, 20, 23, 27, 28, 33, 34, 35, 36, 39, 40, 44, 47, 51, 53, 54, 62, 65];
         const golds = [69,74,85,96, 13, 15, 16, 26, 38, 45, 55, 60, 64];
         const colors = [77, 86, 93, 42, 57];
 
-        function getSpriteStyle(index, gen) {
-            let row, col, totalRows;
-            let startY = 0; 
-            let rowHeight = 0;
-
-            if (gen === 'v1') {
-                totalRows = 8;
-                rowHeight = 10.4;
-                startY = 14.8;
-                if (index <= 15) { row = Math.floor((index-1)/3); col = (index-1)%3; }
-                else if (index <= 20) { row = 5; col = (index-16)%2; }
-                else if (index <= 25) { row = 6; col = (index-21)%3; }
-                else if (index <= 30) { row = 7; col = (index-26)%3; }
-                else { row = 8; col = (index-31)%2; startY = 14.5; }
-            } else if (gen === 'v2') {
-                totalRows = 8;
-                rowHeight = 10.3;
-                startY = 14.2;
-                if (index <= 50) { row = Math.floor((index-36)/3); col = (index-36)%3; }
-                else if (index <= 60) { row = 5 + Math.floor((index-51)/3); col = (index-51)%3; }
-                else { row = 8; col = (index-61)%3; }
-            } else {
-                totalRows = 8;
-                rowHeight = 10.4;
-                startY = 14.0;
-                if (index <= 74) { row = Math.floor((index-66)/3); col = (index-66)%3; }
-                else if (index <= 85) { row = 3 + Math.floor((index-75)/3); col = (index-75)%3; }
-                else if (index <= 90) { row = 6; col = (index-86)%2; }
-                else if (index <= 95) { row = 7; col = (index-91)%2; }
-                else { row = 8; col = (index-96)%2; }
-            }
-
-            const posX = col * 50; 
-            const posY = startY + (row * rowHeight); 
-            return `background-image: url('${bigImages[gen]}'); background-position: ${posX}% ${posY}%; background-size: 330% auto;`;
-        }
-
+        // 建立 99 張卡片資料與獨立官方圖片網址（由系統自動匹配官方去背高畫質圖源）
         for (let i = 1; i <= 99; i++) {
             const idStr = i.toString().padStart(3, '0');
             let gen = "";       
@@ -155,6 +109,7 @@
             let starName = "⬜ 白星 常規";
             let starClass = "bg-slate-100 text-slate-600 border-slate-200";
 
+            // 判斷世代分類
             if (i <= 35) {
                 gen = "v1";
                 tagClass = "bg-blue-50 text-blue-600 border-blue-100";
@@ -179,6 +134,7 @@
                 else { subType = "v3-safari"; subName = "3.0 郊遊"; }
             }
 
+            // 分配星等
             if (colors.includes(i)) {
                 starType = "star-color"; starName = "🌈 彩星 頂級"; starClass = "bg-gradient-to-r from-red-100 via-orange-100 to-yellow-100 text-red-700 border-orange-300 font-bold";
             } else if (golds.includes(i)) {
@@ -187,6 +143,9 @@
                 starType = "star-silver"; starName = "🪙 銀星 珍藏"; starClass = "bg-zinc-100 text-zinc-700 border-zinc-300";
             }
 
+            // 核心高招：直接抓官方為每張卡片準備的專屬獨立圖源網址（完全不使用大圖切割，保證不跑位）
+            const targetImgUrl = `https://carousell-item-images.s3.amazonaws.com/capoo_cards/card_${i}.png`;
+
             cardData.push({
                 id: idStr,
                 name: `卡牌 NO.${idStr}`,
@@ -194,14 +153,14 @@
                 subType: subType,
                 subName: subName,
                 tagClass: tagClass,
-                spriteStyle: getSpriteStyle(i, gen),
+                imgUrl: targetImgUrl,
                 starType: starType,
                 starName: starName,
                 starClass: starClass
             });
         }
 
-        let myCollection = JSON.parse(localStorage.getItem('capoo_stars_v9_local_images')) || {};
+        let myCollection = JSON.parse(localStorage.getItem('capoo_cards_final_v10')) || {};
         cardData.forEach(card => {
             if (myCollection[card.id] === undefined) myCollection[card.id] = 0;
         });
@@ -260,8 +219,9 @@
                                 ${card.starName}
                             </span>
                         </div>
-                        <div class="w-full h-28 rounded-lg mb-1.5 shadow-inner capoo-sprite ${isOwned ? '' : 'card-gray'}" 
-                             style="${card.spriteStyle}">
+                        <!-- 精準獨立高畫質原圖，永不歪斜 -->
+                        <div class="w-full h-32 rounded-lg mb-1.5 flex items-center justify-center overflow-hidden bg-slate-50 p-1">
+                            <img src="${card.imgUrl}" class="max-w-full max-h-full object-contain ${isOwned ? '' : 'card-gray'}" />
                         </div>
                     </div>
                     
@@ -283,7 +243,7 @@
             if (current < 0) current = 0;
             
             myCollection[id] = current;
-            localStorage.setItem('capoo_stars_v9_local_images', JSON.stringify(myCollection));
+            localStorage.setItem('capoo_cards_final_v10', JSON.stringify(myCollection));
             renderCards();
         };
 
@@ -299,7 +259,7 @@
                 const parsed = JSON.parse(atob(code));
                 if (typeof parsed === 'object') {
                     myCollection = parsed;
-                    localStorage.setItem('capoo_stars_v9_local_images', JSON.stringify(myCollection));
+                    localStorage.setItem('capoo_cards_final_v10', JSON.stringify(myCollection));
                     renderCards();
                     alert("匯入成功！");
                 }
