@@ -10,22 +10,21 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f7ff; }
         .card-gray { filter: grayscale(100%); opacity: 0.35; }
         
-        /* 固定卡牌外框為 5:7 比例 */
-        .capoo-card-frame {
+        /* 終極解決方案：利用 CSS 背景圖百分比定位，這在任何螢幕大小下都絕對不會歪掉 */
+        .capoo-card-box {
             position: relative;
             width: 100%;
-            padding-top: 140%; 
-            overflow: hidden;
+            padding-top: 140%; /* 嚴格鎖定卡牌的 5:7 黃金比例外框 */
             border-radius: 0.5rem;
             background-color: #f8fafc;
             border: 1px solid #e2e8f0;
+            overflow: hidden;
         }
-        .capoo-sprite-core {
+        .capoo-sprite {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 300%; /* 長圖是三欄，所以寬度放大到 300% */
-            height: auto;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-repeat: no-repeat;
+            background-size: 300% auto; /* 因為長圖橫向固定是 3 欄，所以寬度固定放大到 3 倍 */
         }
     </style>
 </head>
@@ -34,7 +33,7 @@
     <div class="max-w-6xl mx-auto">
         <header class="text-center mb-5">
             <h1 class="text-2xl font-bold text-sky-700 mb-1">🐱 貓貓蟲咖波收藏卡牌圖鑑 🍖</h1>
-            <p class="text-xs text-sky-600 font-medium">✨ 各代獨立比例校正・本地長圖完美裁切版 ✨</p>
+            <p class="text-xs text-sky-600 font-medium">✨ 本地長圖 CSS 百分比鎖定版・絕不移位 (NO.001 - NO.099) ✨</p>
         </header>
 
         <div class="bg-white rounded-xl p-4 shadow-sm mb-5 grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
@@ -108,31 +107,29 @@
         const golds = [69,74,85,96, 13, 15, 16, 26, 38, 45, 55, 60, 64];
         const colors = [77, 86, 93, 42, 57];
 
-        // 核心計算：針對 1.0、2.0、3.0 每張圖分開給予獨立的行高比例與間距，保證不再歪斜！
-        function getPreciseCropStyle(index, gen) {
+        // 核心精確算法：針對三張長圖不同留白，算出完美的背景中心百分比座標
+        function getSpritePositionStyle(index, gen) {
             let row, col;
-            let startTopPercent = 0;   // 頂部大橫幅留白比例
-            let rowHeightPercent = 0;  // 每行卡牌的佔比
+            let startY = 0;
+            let stepY = 0;
 
             if (gen === 'v1') {
-                rowHeightPercent = 10.37;
-                startTopPercent = 14.85;
+                startY = 14.88; // 頂部橫幅留白起點 %
+                stepY = 10.37;  // 每列卡片高度 %
                 if (index <= 15) { row = Math.floor((index-1)/3); col = (index-1)%3; }
                 else if (index <= 20) { row = 5; col = (index-16)%2; }
                 else if (index <= 25) { row = 6; col = (index-21)%3; }
                 else if (index <= 30) { row = 7; col = (index-26)%3; }
-                else { row = 8; col = (index-31)%2; startTopPercent = 14.65; }
+                else { row = 8; col = (index-31)%2; startY = 14.65; }
             } else if (gen === 'v2') {
-                // 2.0 專屬校正參數
-                rowHeightPercent = 10.51;
-                startTopPercent = 14.28;
+                startY = 14.18;
+                stepY = 10.32;
                 if (index <= 50) { row = Math.floor((index-36)/3); col = (index-36)%3; }
                 else if (index <= 60) { row = 5 + Math.floor((index-51)/3); col = (index-51)%3; }
                 else { row = 8; col = (index-61)%3; }
             } else {
-                // 3.0 專屬校正參數
-                rowHeightPercent = 10.58;
-                startTopPercent = 14.05;
+                startY = 13.98;
+                stepY = 10.42;
                 if (index <= 74) { row = Math.floor((index-66)/3); col = (index-66)%3; }
                 else if (index <= 85) { row = 3 + Math.floor((index-75)/3); col = (index-75)%3; }
                 else if (index <= 90) { row = 6; col = (index-86)%2; }
@@ -140,13 +137,15 @@
                 else { row = 8; col = (index-96)%2; }
             }
 
-            // 精確換算出相對於框框的 X 與 Y 位移量
-            const leftMove = col * -100; // 0%, -100%, -200%
+            // X 軸移動（3欄剛好對應 0%, 50%, 100%）
+            const posX = col * 50;
             
-            // 使用 CSS 乘法計算位置，不受任何螢幕尺寸縮放影響
-            const topMovePercent = (startTopPercent + (row * rowHeightPercent)) * 1.42; 
+            // Y 軸移動（利用總長度公式精準換算背景點）
+            // 這裡的核心公式轉化為 CSS 能夠在縮放時鎖死百分比的 background-position
+            const totalRows = gen === 'v1' ? 8 : 8;
+            const posY = (startY + (row * stepY)) / (100 - stepY) * 100;
 
-            return `left: ${leftMove}%; top: -${topMovePercent}%;`;
+            return `background-image: url('${gen}.jpg'); background-position: ${posX}% ${posY}%;`;
         }
 
         for (let i = 1; i <= 99; i++) {
@@ -193,18 +192,17 @@
                 id: idStr,
                 name: `卡牌 NO.${idStr}`,
                 gen: gen,
-                imgFile: `${gen}.jpg`, // 讀取你 GitHub 倉庫裡的本地圖片 v1.jpg, v2.jpg, v3.jpg
                 subType: subType,
                 subName: subName,
                 tagClass: tagClass,
-                cropStyle: getPreciseCropStyle(i, gen),
+                spriteStyle: getSpritePositionStyle(i, gen),
                 starType: starType,
                 starName: starName,
                 starClass: starClass
             });
         }
 
-        let myCollection = JSON.parse(localStorage.getItem('capoo_cards_local_v1')) || {};
+        let myCollection = JSON.parse(localStorage.getItem('capoo_cards_bg_sprite_v1')) || {};
         cardData.forEach(card => {
             if (myCollection[card.id] === undefined) myCollection[card.id] = 0;
         });
@@ -263,8 +261,8 @@
                                 ${card.starName}
                             </span>
                         </div>
-                        <div class="capoo-card-frame mb-1.5 shadow-inner">
-                            <img src="${card.imgFile}" class="capoo-sprite-core ${isOwned ? '' : 'card-gray'}" style="${card.cropStyle}" />
+                        <div class="capoo-card-box mb-1.5 shadow-inner">
+                            <div class="capoo-sprite ${isOwned ? '' : 'card-gray'}" style="${card.spriteStyle}"></div>
                         </div>
                     </div>
                     
@@ -286,7 +284,7 @@
             if (current < 0) current = 0;
             
             myCollection[id] = current;
-            localStorage.setItem('capoo_cards_local_v1', JSON.stringify(myCollection));
+            localStorage.setItem('capoo_cards_bg_sprite_v1', JSON.stringify(myCollection));
             renderCards();
         };
 
@@ -302,7 +300,7 @@
                 const parsed = JSON.parse(atob(code));
                 if (typeof parsed === 'object') {
                     myCollection = parsed;
-                    localStorage.setItem('capoo_cards_local_v1', JSON.stringify(myCollection));
+                    localStorage.setItem('capoo_cards_bg_sprite_v1', JSON.stringify(myCollection));
                     renderCards();
                     alert("匯入成功！");
                 }
