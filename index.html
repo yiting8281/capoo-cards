@@ -10,6 +10,11 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f7ff; }
         .card-gray { filter: grayscale(100%); opacity: 0.35; }
+        /* 精準切割官方大圖的魔法樣式 */
+        .capoo-sprite {
+            background-size: 100% auto;
+            background-repeat: no-repeat;
+        }
     </style>
 </head>
 <body class="p-3 md:p-8">
@@ -18,7 +23,7 @@
         <!-- 標頭 -->
         <header class="text-center mb-5">
             <h1 class="text-2xl font-bold text-sky-700 mb-1">🐱 貓貓蟲咖波收藏卡牌圖鑑 🍖</h1>
-            <p class="text-xs text-sky-600 font-medium">✨ 100% 手寫實體卡校對・星等完全精確版 (NO.001 - NO.099) ✨</p>
+            <p class="text-xs text-sky-600 font-medium">✨ 100% 官方對照・手寫星等・實體卡面全顯現版 ✨</p>
         </header>
 
         <!-- 控制面板 -->
@@ -92,17 +97,57 @@
     <script>
         const cardData = [];
         
-        const imgMap = {
+        // 核心：直接綁定官方原圖大圖網址
+        const bigImages = {
             v1: "https://imagedelivery.net/95f9w-mYvI6Kj7A0_7_9aA/6b01b34e-4e63-4416-09df-6fa66bc8d700/public",
             v2: "https://imagedelivery.net/95f9w-mYvI6Kj7A0_7_9aA/436c646b-0775-49a0-6213-9112217c4500/public",
             v3: "https://imagedelivery.net/95f9w-mYvI6Kj7A0_7_9aA/a7eb20c1-394e-4b68-0fa1-329bf1b3a300/public"
         };
 
-        // 依據手寫清單精準分類的所有陣列
+        // 星等分組陣列（手寫校對版）
         const silvers = [72,73,75,78,79,82,83,89,95,97, 4, 10, 12, 14, 17, 20, 23, 27, 28, 33, 34, 35, 36, 39, 40, 44, 47, 51, 53, 54, 62, 65];
         const golds = [69,74,85,96, 13, 15, 16, 26, 38, 45, 55, 60, 64];
         const colors = [77, 86, 93, 42, 57];
 
+        // 圖鑑大圖內部的卡牌座標定位點（依據行列排序精確計算百分比）
+        function getSpriteStyle(index, gen) {
+            let row, col, totalRows;
+            let startY = 0; // 頂部標題留白比率
+            let rowHeight = 0;
+
+            if (gen === 'v1') {
+                totalRows = 8;
+                rowHeight = 10.4;
+                startY = 14.8;
+                if (index <= 15) { row = Math.floor((index-1)/3); col = (index-1)%3; }
+                else if (index <= 20) { row = 5; col = (index-16)%2; }
+                else if (index <= 25) { row = 6; col = (index-21)%3; }
+                else if (index <= 30) { row = 7; col = (index-26)%3; }
+                else { row = 8; col = (index-31)%2; startY = 14.5; } // 門市抽微調
+            } else if (gen === 'v2') {
+                totalRows = 8;
+                rowHeight = 10.3;
+                startY = 14.2;
+                if (index <= 50) { row = Math.floor((index-36)/3); col = (index-36)%3; }
+                else if (index <= 60) { row = 5 + Math.floor((index-51)/3); col = (index-51)%3; }
+                else { row = 8; col = (index-61)%3; }
+            } else {
+                totalRows = 8;
+                rowHeight = 10.4;
+                startY = 14.0;
+                if (index <= 74) { row = Math.floor((index-66)/3); col = (index-66)%3; }
+                else if (index <= 85) { row = 3 + Math.floor((index-75)/3); col = (index-75)%3; }
+                else if (index <= 90) { row = 6; col = (index-86)%2; }
+                else if (index <= 95) { row = 7; col = (index-91)%2; }
+                else { row = 8; col = (index-96)%2; }
+            }
+
+            const posX = col * 50; // 橫向定位 (0%, 50%, 100%)
+            const posY = startY + (row * rowHeight); // 縱向計算
+            return `background-image: url('${bigImages[gen]}'); background-position: ${posX}% ${posY}%; background-size: 330% auto;`;
+        }
+
+        // 建立 99 張卡片
         for (let i = 1; i <= 99; i++) {
             const idStr = i.toString().padStart(3, '0');
             let gen = "";       
@@ -114,7 +159,6 @@
             let starName = "⬜ 白星 常規";
             let starClass = "bg-slate-100 text-slate-600 border-slate-200";
 
-            // 判斷世代
             if (i <= 35) {
                 gen = "v1";
                 tagClass = "bg-blue-50 text-blue-600 border-blue-100";
@@ -139,7 +183,6 @@
                 else { subType = "v3-safari"; subName = "3.0 郊遊"; }
             }
 
-            // 依據手寫定義星等
             if (colors.includes(i)) {
                 starType = "star-color"; starName = "🌈 彩星 頂級"; starClass = "bg-gradient-to-r from-red-100 via-orange-100 to-yellow-100 text-red-700 border-orange-300 font-bold";
             } else if (golds.includes(i)) {
@@ -150,19 +193,19 @@
 
             cardData.push({
                 id: idStr,
-                name: `咖波卡牌 NO.${idStr}`,
+                name: `卡牌 NO.${idStr}`,
                 gen: gen,
                 subType: subType,
                 subName: subName,
                 tagClass: tagClass,
-                imgUrl: imgMap[gen],
+                spriteStyle: getSpriteStyle(i, gen),
                 starType: starType,
                 starName: starName,
                 starClass: starClass
             });
         }
 
-        let myCollection = JSON.parse(localStorage.getItem('capoo_stars_v7_handwritten')) || {};
+        let myCollection = JSON.parse(localStorage.getItem('capoo_stars_v8_sprites')) || {};
         cardData.forEach(card => {
             if (myCollection[card.id] === undefined) myCollection[card.id] = 0;
         });
@@ -221,13 +264,13 @@
                                 ${card.starName}
                             </span>
                         </div>
-                        <div class="w-full h-20 rounded-lg mb-1.5 shadow-inner bg-contain bg-no-repeat bg-center bg-slate-50 ${isOwned ? '' : 'card-gray'}" 
-                             style="background-image: url('${card.imgUrl}');">
+                        <!-- 切割後的卡片真實圖案區塊 -->
+                        <div class="w-full h-28 rounded-lg mb-1.5 shadow-inner capoo-sprite ${isOwned ? '' : 'card-gray'}" 
+                             style="${card.spriteStyle}">
                         </div>
-                        <h3 class="font-bold text-slate-700 text-[11px] text-center truncate ${isOwned ? '' : 'text-slate-400'}">${card.name}</h3>
                     </div>
                     
-                    <div class="mt-2 flex items-center justify-between bg-slate-50 rounded-md p-0.5">
+                    <div class="mt-1 flex items-center justify-between bg-slate-50 rounded-md p-0.5">
                         <button onclick="updateCount('${card.id}', -1)" class="w-6 h-6 rounded bg-white border border-slate-200 text-slate-600 font-bold active:scale-95 transition-all text-xs">-</button>
                         <span class="font-bold text-xs ${count > 0 ? 'text-slate-800' : 'text-slate-300'}">${count}</span>
                         <button onclick="updateCount('${card.id}', 1)" class="w-6 h-6 rounded bg-sky-500 text-white font-bold active:scale-95 transition-all text-xs">+</button>
@@ -245,7 +288,7 @@
             if (current < 0) current = 0;
             
             myCollection[id] = current;
-            localStorage.setItem('capoo_stars_v7_handwritten', JSON.stringify(myCollection));
+            localStorage.setItem('capoo_stars_v8_sprites', JSON.stringify(myCollection));
             renderCards();
         };
 
@@ -261,7 +304,7 @@
                 const parsed = JSON.parse(atob(code));
                 if (typeof parsed === 'object') {
                     myCollection = parsed;
-                    localStorage.setItem('capoo_stars_v7_handwritten', JSON.stringify(myCollection));
+                    localStorage.setItem('capoo_stars_v8_sprites', JSON.stringify(myCollection));
                     renderCards();
                     alert("匯入成功！");
                 }
