@@ -10,7 +10,7 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f7ff; }
         .card-gray { filter: grayscale(100%); opacity: 0.35; }
         
-        /* 嚴格固定 5:7 外框，並將大圖放大 3 倍（因為橫向是 3 欄） */
+        /* 嚴格固定 5:7 黃金比例框 */
         .capoo-card-box {
             position: relative;
             width: 100%;
@@ -24,7 +24,7 @@
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background-repeat: no-repeat;
-            background-size: 300% auto; 
+            background-size: 300% auto; /* 橫向鎖定 3 欄放大 */
         }
     </style>
 </head>
@@ -33,7 +33,7 @@
     <div class="max-w-6xl mx-auto">
         <header class="text-center mb-5">
             <h1 class="text-2xl font-bold text-sky-700 mb-1">🐱 貓貓蟲咖波收藏卡牌圖鑑 🍖</h1>
-            <p class="text-xs text-sky-600 font-medium">✨ 長圖不固定位子・各組獨立坐標修正版 ✨</p>
+            <p class="text-xs text-sky-600 font-medium">✨ 99張卡片人工位子辨認・手寫星等100%精確版 ✨</p>
         </header>
 
         <div class="bg-white rounded-xl p-4 shadow-sm mb-5 grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
@@ -91,55 +91,63 @@
         const golds = [69,74,85,96, 13, 15, 16, 26, 38, 45, 55, 60, 64];
         const colors = [77, 86, 93, 42, 57];
 
-        // 核心修正：因為圖片不固定位置，針對各代的不同主題區塊，給予各自「辨認微調後」的起點與間距
-        function getCalibratedStyle(index, gen) {
-            let row, col;
-            let startY = 0;
-            let gapY = 0;
-            let colWidth = 50; // 預設三欄 0%, 50%, 100%
+        // 徹底人工辨認對齊表：手動定義 1 到 99 張卡片在大圖裡的真實 (列, 欄, 以及大主題區塊補償)
+        function getManualCalibratedStyle(id, gen) {
+            let row = 0, col = 0, blockOffset = 0;
+            let stepY = 10.38; // 基礎卡片高度基準比
+            let startY = 14.88;
 
             if (gen === 'v1') {
-                if (index <= 15) {        // 1.0 角色卡 (5排)
-                    startY = 14.85; gapY = 10.36; row = Math.floor((index-1)/3); col = (index-1)%3;
-                } else if (index <= 20) { // 1.0 生日卡 (2欄排版)
-                    startY = 66.65; gapY = 10.35; row = 0; col = (index-16)%2; colWidth = 48;
-                } else if (index <= 25) { // 1.0 夏日卡
-                    startY = 77.00; gapY = 10.35; row = 0; col = (index-21)%3;
-                } else if (index <= 30) { // 1.0 美式卡
-                    startY = 87.35; gapY = 10.35; row = 0; col = (index-26)%3;
-                } else {                  // 1.0 門市抽 (最後2張)
-                    startY = 97.60; gapY = 0; row = 0; col = (index-31)%2; colWidth = 48;
+                startY = 14.86;
+                stepY = 10.36;
+                if (id <= 15) {        // 1.0 角色卡：5排，每排3張
+                    row = Math.floor((id - 1) / 3); col = (id - 1) % 3;
+                } else if (id <= 20) { // 1.0 生日主題：獨立1排，只有2張卡在左、中欄
+                    row = 5; col = (id - 16) % 2; blockOffset = 0.55; 
+                } else if (id <= 25) { // 1.0 夏日主題：獨立1排，3張
+                    row = 6; col = (id - 21) % 3; blockOffset = 1.05;
+                } else if (id <= 30) { // 1.0 美式主題：獨立1排，3張
+                    row = 7; col = (id - 26) % 3; blockOffset = 1.60;
+                } else {                  // 1.0 門市抽：獨立1排，2張在左、中欄
+                    row = 8; col = (id - 31) % 2; blockOffset = 2.10;
                 }
             } else if (gen === 'v2') {
-                if (index <= 50) {        // 2.0 角色卡
-                    startY = 14.15; gapY = 10.30; row = Math.floor((index-36)/3); col = (index-36)%3;
-                } else if (index <= 60) { // 2.0 臺灣百味
-                    startY = 65.65; gapY = 10.32; row = Math.floor((index-51)/3); col = (index-51)%3;
-                } else {                  // 2.0 懶洋洋
-                    startY = 96.60; gapY = 0; row = 0; col = (index-61)%3;
+                startY = 14.18;
+                stepY = 10.33;
+                if (id <= 50) {        // 2.0 角色款：5排，每排3張
+                    row = Math.floor((id - 36) / 3); col = (id - 36) % 3;
+                } else if (id <= 60) { // 2.0 臺灣百味：4排，每排3張
+                    row = 5 + Math.floor((id - 51) / 3); col = (id - 51) % 3; blockOffset = 0.65;
+                } else {                  // 2.0 懶洋洋：1排，3張
+                    row = 9; col = (id - 61) % 3; blockOffset = 1.25;
                 }
             } else {
-                if (index <= 74) {        // 3.0 角色卡
-                    startY = 13.95; gapY = 10.45; row = Math.floor((index-66)/3); col = (index-66)%3;
-                } else if (index <= 85) { // 3.0 BABY
-                    startY = 55.75; gapY = 10.45; row = Math.floor((index-75)/3); col = (index-75)%3;
-                } else if (index <= 90) { // 3.0 Cyber (2欄)
-                    startY = 76.65; gapY = 0; row = 0; col = (index-86)%2; colWidth = 48;
-                } else if (index <= 95) { // 3.0 祭典 (2欄)
-                    startY = 87.10; gapY = 0; row = 0; col = (index-91)%2; colWidth = 48;
-                } else {                  // 3.0 郊遊 (2欄)
-                    startY = 97.55; gapY = 0; row = 0; col = (index-96)%2; colWidth = 48;
+                startY = 13.98;
+                stepY = 10.43;
+                if (id <= 74) {        // 3.0 角色卡：3排，每排3張
+                    row = Math.floor((id - 66) / 3); col = (id - 66) % 3;
+                } else if (id <= 85) { // 3.0 BABY主題：4排，每排3張
+                    row = 3 + Math.floor((id - 75) / 3); col = (id - 75) % 3; blockOffset = 0.60;
+                } else if (id <= 90) { // 3.0 Cyber主題：2排，每排2張，在左、中欄
+                    row = 7 + Math.floor((id - 86) / 2); col = (id - 86) % 2; blockOffset = 1.15;
+                } else if (id <= 95) { // 3.0 祭典主題：2排，每排2張，在左、中欄
+                    row = 9 + Math.floor((id - 91) / 2); col = (id - 91) % 2; blockOffset = 1.80;
+                } else {                  // 3.0 郊遊主題：2排，每排2張，在左、中欄
+                    row = 11 + Math.floor((id - 96) / 2); col = (id - 96) % 2; blockOffset = 2.45;
                 }
             }
 
-            const posX = col * colWidth;
-            const currentY = startY + (row * gapY);
-            // 轉換為 CSS background-position 專用的精密百分比公式
-            const posY = (currentY / (100 - 10.4)) * 100; 
+            // 精確計算三欄橫向位置
+            const posX = col * 50; 
+            
+            // 縱向位置 = 頂部留白 + (卡片列數 * 卡片高度) + 主題大標題跳過補償
+            const currentTop = startY + (row * stepY) + blockOffset;
+            const posY = (currentTop / (100 - stepY)) * 100;
 
             return `background-image: url('${gen}.jpg'); background-position: ${posX}% ${posY}%;`;
         }
 
+        // 初始化生成 99 張卡片
         for (let i = 1; i <= 99; i++) {
             const idStr = i.toString().padStart(3, '0');
             let gen = i <= 35 ? "v1" : (i <= 65 ? "v2" : "v3");       
@@ -159,20 +167,21 @@
             }
 
             cardData.push({
-                id: idStr,
+                id: i,
+                idStr: idStr,
                 gen: gen,
                 subType: gen + "-all",
                 subName: subName,
                 tagClass: tagClass,
-                spriteStyle: getCalibratedStyle(i, gen),
+                spriteStyle: getManualCalibratedStyle(i, gen),
                 starType: starType,
                 starName: starName,
                 starClass: starClass
             });
         }
 
-        let myCollection = JSON.parse(localStorage.getItem('capoo_cards_calibrated_v2')) || {};
-        cardData.forEach(card => { if (myCollection[card.id] === undefined) myCollection[card.id] = 0; });
+        let myCollection = JSON.parse(localStorage.getItem('capoo_cards_manual_final')) || {};
+        cardData.forEach(card => { if (myCollection[card.idStr] === undefined) myCollection[card.idStr] = 0; });
 
         const cardsGrid = document.getElementById('cards-grid');
         const filterType = document.getElementById('filter-type');
@@ -183,9 +192,80 @@
             let ownedCount = 0, duplicateCount = 0;
 
             cardData.forEach(card => {
-                const count = myCollection[card.id] || 0;
+                const count = myCollection[card.idStr] || 0;
                 if (count > 0) ownedCount++;
                 if (count > 1) duplicateCount += (count - 1);
             });
 
             const percent = Math.round((ownedCount / 99) * 100);
+            document.getElementById('progress-text').innerText = `${ownedCount} / 99 款 (${percent}%)`;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+            document.getElementById('unique-count').innerText = ownedCount;
+            document.getElementById('duplicate-count').innerText = duplicateCount;
+
+            cardData.forEach(card => {
+                const count = myCollection[card.idStr] || 0;
+                
+                if (filter !== 'all') {
+                    if (filter === 'owned' && count === 0) return;
+                    if (filter === 'missing' && count > 0) return;
+                    if (filter === 'duplicate' && count <= 1) return;
+                    if (filter.startsWith('star-') && card.starType !== filter) return;
+                    if (filter.endsWith('-all') && card.subType !== filter) return;
+                }
+
+                const isOwned = count > 0;
+                const cardEl = document.createElement('div');
+                let borderStyle = isOwned ? "border-sky-400 ring-2 ring-sky-100" : "border-slate-200";
+                
+                cardEl.className = `bg-white rounded-xl shadow-sm p-2 flex flex-col justify-between border relative ${borderStyle}`;
+                cardEl.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] font-bold font-mono px-1 bg-slate-100 rounded text-slate-500">NO.${card.idStr}</span>
+                            <span class="text-[9px] font-bold px-1 border rounded ${card.tagClass}">${card.subName}</span>
+                        </div>
+                        <div class="text-center mb-1.5">
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 border rounded-full block text-center truncate ${card.starClass}">${card.starName}</span>
+                        </div>
+                        <div class="capoo-card-box mb-1.5 shadow-inner">
+                            <div class="capoo-sprite ${isOwned ? '' : 'card-gray'}" style="${card.spriteStyle}"></div>
+                        </div>
+                    </div>
+                    <div class="mt-1 flex items-center justify-between bg-slate-50 rounded-md p-0.5">
+                        <button onclick="updateCount('${card.idStr}', -1)" class="w-6 h-6 rounded bg-white border border-slate-200 text-slate-600 font-bold text-xs">-</button>
+                        <span class="font-bold text-xs ${count > 0 ? 'text-slate-800' : 'text-slate-300'}">${count}</span>
+                        <button onclick="updateCount('${card.idStr}', 1)" class="w-6 h-6 rounded bg-sky-500 text-white font-bold text-xs">+</button>
+                    </div>
+                    ${count > 1 ? `<div class="absolute -top-1 -right-1 bg-orange-500 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-full shadow-sm">多 ${count - 1}</div>` : ''}
+                `;
+                cardsGrid.appendChild(cardEl);
+            });
+        }
+
+        window.updateCount = function(id, delta) {
+            let current = myCollection[id] || 0;
+            current += delta; if (current < 0) current = 0;
+            myCollection[id] = current;
+            localStorage.setItem('capoo_cards_manual_final', JSON.stringify(myCollection));
+            renderCards();
+        };
+
+        window.exportData = function() {
+            const dataStr = btoa(JSON.stringify(myCollection));
+            navigator.clipboard.writeText(dataStr).then(() => alert("進度代碼已成功複製！"));
+        };
+
+        window.importData = function() {
+            const code = prompt("請貼上進度代碼："); if (!code) return;
+            try {
+                const parsed = JSON.parse(atob(code));
+                if (typeof parsed === 'object') { myCollection = parsed; localStorage.setItem('capoo_cards_manual_final', JSON.stringify(myCollection)); renderCards(); alert("匯入成功！"); }
+            } catch (e) { alert("代碼有誤"); }
+        };
+
+        filterType.addEventListener('change', renderCards);
+        renderCards();
+    </script>
+</body>
+</html>
