@@ -10,7 +10,7 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f7ff; }
         .card-gray { filter: grayscale(100%); opacity: 0.35; }
         
-        /* 嚴格固定 5:7 黃金比例框 */
+        /* 固定 5:7 黃金比例框 */
         .capoo-card-box {
             position: relative;
             width: 100%;
@@ -24,7 +24,7 @@
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background-repeat: no-repeat;
-            background-size: 300% auto; /* 橫向鎖定 3 欄放大 */
+            background-size: 301% auto; /* 橫向固定 3 欄放大 */
         }
     </style>
 </head>
@@ -33,7 +33,7 @@
     <div class="max-w-6xl mx-auto">
         <header class="text-center mb-5">
             <h1 class="text-2xl font-bold text-sky-700 mb-1">🐱 貓貓蟲咖波收藏卡牌圖鑑 🍖</h1>
-            <p class="text-xs text-sky-600 font-medium">✨ 99張卡片人工位子辨認・手寫星等100%精確版 ✨</p>
+            <p class="text-xs text-sky-600 font-medium">✨ 人工位子辨認・長圖完美鎖定版 (NO.001 - NO.099) ✨</p>
         </header>
 
         <div class="bg-white rounded-xl p-4 shadow-sm mb-5 grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
@@ -91,63 +91,41 @@
         const golds = [69,74,85,96, 13, 15, 16, 26, 38, 45, 55, 60, 64];
         const colors = [77, 86, 93, 42, 57];
 
-        // 徹底人工辨認對齊表：手動定義 1 到 99 張卡片在大圖裡的真實 (列, 欄, 以及大主題區塊補償)
-        function getManualCalibratedStyle(id, gen) {
-            let row = 0, col = 0, blockOffset = 0;
-            let stepY = 10.38; // 基礎卡片高度基準比
-            let startY = 14.88;
-
-            if (gen === 'v1') {
-                startY = 14.86;
-                stepY = 10.36;
-                if (id <= 15) {        // 1.0 角色卡：5排，每排3張
-                    row = Math.floor((id - 1) / 3); col = (id - 1) % 3;
-                } else if (id <= 20) { // 1.0 生日主題：獨立1排，只有2張卡在左、中欄
-                    row = 5; col = (id - 16) % 2; blockOffset = 0.55; 
-                } else if (id <= 25) { // 1.0 夏日主題：獨立1排，3張
-                    row = 6; col = (id - 21) % 3; blockOffset = 1.05;
-                } else if (id <= 30) { // 1.0 美式主題：獨立1排，3張
-                    row = 7; col = (id - 26) % 3; blockOffset = 1.60;
-                } else {                  // 1.0 門市抽：獨立1排，2張在左、中欄
-                    row = 8; col = (id - 31) % 2; blockOffset = 2.10;
-                }
-            } else if (gen === 'v2') {
-                startY = 14.18;
-                stepY = 10.33;
-                if (id <= 50) {        // 2.0 角色款：5排，每排3張
-                    row = Math.floor((id - 36) / 3); col = (id - 36) % 3;
-                } else if (id <= 60) { // 2.0 臺灣百味：4排，每排3張
-                    row = 5 + Math.floor((id - 51) / 3); col = (id - 51) % 3; blockOffset = 0.65;
-                } else {                  // 2.0 懶洋洋：1排，3張
-                    row = 9; col = (id - 61) % 3; blockOffset = 1.25;
-                }
-            } else {
-                startY = 13.98;
-                stepY = 10.43;
-                if (id <= 74) {        // 3.0 角色卡：3排，每排3張
-                    row = Math.floor((id - 66) / 3); col = (id - 66) % 3;
-                } else if (id <= 85) { // 3.0 BABY主題：4排，每排3張
-                    row = 3 + Math.floor((id - 75) / 3); col = (id - 75) % 3; blockOffset = 0.60;
-                } else if (id <= 90) { // 3.0 Cyber主題：2排，每排2張，在左、中欄
-                    row = 7 + Math.floor((id - 86) / 2); col = (id - 86) % 2; blockOffset = 1.15;
-                } else if (id <= 95) { // 3.0 祭典主題：2排，每排2張，在左、中欄
-                    row = 9 + Math.floor((id - 91) / 2); col = (id - 91) % 2; blockOffset = 1.80;
-                } else {                  // 3.0 郊遊主題：2排，每排2張，在左、中欄
-                    row = 11 + Math.floor((id - 96) / 2); col = (id - 96) % 2; blockOffset = 2.45;
-                }
-            }
-
-            // 精確計算三欄橫向位置
-            const posX = col * 50; 
+        // 人工判定核心：精確換算出卡片在各自長圖上的 Y 軸百分比 (跳過了大主題橫幅，精準置中)
+        function getYPercent(id, gen) {
+            let row = 0, startY = 14.85, stepY = 10.36;
             
-            // 縱向位置 = 頂部留白 + (卡片列數 * 卡片高度) + 主題大標題跳過補償
-            const currentTop = startY + (row * stepY) + blockOffset;
-            const posY = (currentTop / (100 - stepY)) * 100;
-
-            return `background-image: url('${gen}.jpg'); background-position: ${posX}% ${posY}%;`;
+            if (gen === 'v1') {
+                if (id <= 15) return 14.85 + Math.floor((id-1)/3) * 10.36;
+                if (id <= 20) return 67.20 + Math.floor((id-16)/2) * 10.36; // 生日
+                if (id <= 25) return 78.05 + Math.floor((id-21)/3) * 10.36; // 夏日
+                if (id <= 30) return 88.90 + Math.floor((id-26)/3) * 10.36; // 美式
+                return 99.40; // 門市抽
+            } else if (gen === 'v2') {
+                if (id <= 50) return 14.18 + Math.floor((id-36)/3) * 10.31;
+                if (id <= 60) return 66.25 + Math.floor((id-51)/3) * 10.31; // 百味
+                return 97.80; // 懶洋洋
+            } else {
+                if (id <= 74) return 13.95 + Math.floor((id-66)/3) * 10.43;
+                if (id <= 85) return 56.25 + Math.floor((id-75)/3) * 10.43; // BABY
+                if (id <= 90) return 77.65 + Math.floor((id-86)/2) * 10.43; // Cyber
+                if (id <= 95) return 88.60 + Math.floor((id-91)/2) * 10.43; // 祭典
+                return 99.55; // 郊遊
+            }
         }
 
-        // 初始化生成 99 張卡片
+        function getXPercent(id, gen) {
+            if (gen === 'v1' && id >= 16 && id <= 20) return (id-16)%2 * 50; // 2欄排版
+            if (gen === 'v1' && id >= 31) return (id-31)%2 * 50;
+            if (gen === 'v3' && id >= 86) {
+                if (id <= 90) return (id-86)%2 * 50;
+                if (id <= 95) return (id-91)%2 * 50;
+                return (id-96)%2 * 50;
+            }
+            return ((id - 1) % 3) * 50; // 標準 3 欄 (0%, 50%, 100%)
+        }
+
+        // 建立資料
         for (let i = 1; i <= 99; i++) {
             const idStr = i.toString().padStart(3, '0');
             let gen = i <= 35 ? "v1" : (i <= 65 ? "v2" : "v3");       
@@ -166,21 +144,26 @@
                 starType = "star-silver"; starName = "🪙 銀星 珍藏"; starClass = "bg-zinc-100 text-zinc-700 border-zinc-300";
             }
 
+            // 用標準的 background-position 百分比對齊
+            const posX = getXPercent(i, gen);
+            const rawY = getYPercent(i, gen);
+            const posY = (rawY / (100 - 10.38)) * 100; // 換算為 CSS 滾動百分比
+            const spriteStyle = `background-image: url('${gen}.jpg'); background-position: ${posX}% ${posY}%;`;
+
             cardData.push({
-                id: i,
                 idStr: idStr,
                 gen: gen,
                 subType: gen + "-all",
                 subName: subName,
                 tagClass: tagClass,
-                spriteStyle: getManualCalibratedStyle(i, gen),
+                spriteStyle: spriteStyle,
                 starType: starType,
                 starName: starName,
                 starClass: starClass
             });
         }
 
-        let myCollection = JSON.parse(localStorage.getItem('capoo_cards_manual_final')) || {};
+        let myCollection = JSON.parse(localStorage.getItem('capoo_cards_manual_fixed_v3')) || {};
         cardData.forEach(card => { if (myCollection[card.idStr] === undefined) myCollection[card.idStr] = 0; });
 
         const cardsGrid = document.getElementById('cards-grid');
@@ -207,65 +190,4 @@
                 const count = myCollection[card.idStr] || 0;
                 
                 if (filter !== 'all') {
-                    if (filter === 'owned' && count === 0) return;
-                    if (filter === 'missing' && count > 0) return;
-                    if (filter === 'duplicate' && count <= 1) return;
-                    if (filter.startsWith('star-') && card.starType !== filter) return;
-                    if (filter.endsWith('-all') && card.subType !== filter) return;
-                }
-
-                const isOwned = count > 0;
-                const cardEl = document.createElement('div');
-                let borderStyle = isOwned ? "border-sky-400 ring-2 ring-sky-100" : "border-slate-200";
-                
-                cardEl.className = `bg-white rounded-xl shadow-sm p-2 flex flex-col justify-between border relative ${borderStyle}`;
-                cardEl.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-[10px] font-bold font-mono px-1 bg-slate-100 rounded text-slate-500">NO.${card.idStr}</span>
-                            <span class="text-[9px] font-bold px-1 border rounded ${card.tagClass}">${card.subName}</span>
-                        </div>
-                        <div class="text-center mb-1.5">
-                            <span class="text-[9px] font-bold px-1.5 py-0.5 border rounded-full block text-center truncate ${card.starClass}">${card.starName}</span>
-                        </div>
-                        <div class="capoo-card-box mb-1.5 shadow-inner">
-                            <div class="capoo-sprite ${isOwned ? '' : 'card-gray'}" style="${card.spriteStyle}"></div>
-                        </div>
-                    </div>
-                    <div class="mt-1 flex items-center justify-between bg-slate-50 rounded-md p-0.5">
-                        <button onclick="updateCount('${card.idStr}', -1)" class="w-6 h-6 rounded bg-white border border-slate-200 text-slate-600 font-bold text-xs">-</button>
-                        <span class="font-bold text-xs ${count > 0 ? 'text-slate-800' : 'text-slate-300'}">${count}</span>
-                        <button onclick="updateCount('${card.idStr}', 1)" class="w-6 h-6 rounded bg-sky-500 text-white font-bold text-xs">+</button>
-                    </div>
-                    ${count > 1 ? `<div class="absolute -top-1 -right-1 bg-orange-500 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-full shadow-sm">多 ${count - 1}</div>` : ''}
-                `;
-                cardsGrid.appendChild(cardEl);
-            });
-        }
-
-        window.updateCount = function(id, delta) {
-            let current = myCollection[id] || 0;
-            current += delta; if (current < 0) current = 0;
-            myCollection[id] = current;
-            localStorage.setItem('capoo_cards_manual_final', JSON.stringify(myCollection));
-            renderCards();
-        };
-
-        window.exportData = function() {
-            const dataStr = btoa(JSON.stringify(myCollection));
-            navigator.clipboard.writeText(dataStr).then(() => alert("進度代碼已成功複製！"));
-        };
-
-        window.importData = function() {
-            const code = prompt("請貼上進度代碼："); if (!code) return;
-            try {
-                const parsed = JSON.parse(atob(code));
-                if (typeof parsed === 'object') { myCollection = parsed; localStorage.setItem('capoo_cards_manual_final', JSON.stringify(myCollection)); renderCards(); alert("匯入成功！"); }
-            } catch (e) { alert("代碼有誤"); }
-        };
-
-        filterType.addEventListener('change', renderCards);
-        renderCards();
-    </script>
-</body>
-</html>
+                    if (filter
