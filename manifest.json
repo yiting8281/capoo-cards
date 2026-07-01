@@ -1,0 +1,15 @@
+{
+  "short_name": "咖波圖鑑",
+  "name": "貓貓蟲咖波收藏卡牌線上圖鑑登記本",
+  "icons": [
+    {
+      "src": "./logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#f0f7ff",
+  "display": "standalone",
+  "theme_color": "#0284c7"
+}
