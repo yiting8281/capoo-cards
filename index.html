@@ -3,109 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>貓貓蟲咖波收藏卡牌線上圖鑑登記本</title>
+    <title>貓貓蟲咖波收藏卡牌線上圖鑑</title>
     <link rel="manifest" href="manifest.json">
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./service-worker.js');
+            navigator.serviceWorker.register('./service-worker.js').catch(() => {});
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f7ff; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
         .card-gray { filter: grayscale(100%); opacity: 0.35; }
+        
+        /* 特殊星等亮光微特效 */
+        .card-rainbow {
+            border-image: linear-gradient(135deg, #f43f5e, #fb923c, #fbbf24, #38bdf8) 1;
+            box-shadow: 0 4px 15px -3px rgba(251, 146, 60, 0.25);
+        }
+        .card-gold {
+            box-shadow: 0 4px 12px -2px rgba(234, 179, 8, 0.25);
+        }
     </style>
 </head>
-<body class="p-3 md:p-8">
+<body class="p-3 md:p-6 text-slate-800">
 
     <div class="max-w-6xl mx-auto">
-        <header class="text-center mb-5">
-            <h1 class="text-2xl font-bold text-sky-700 mb-1">🐱 貓貓蟲咖波收藏卡牌圖鑑 🍖</h1>
-            <p class="text-xs text-sky-600 font-medium">✨ 100% 官方高畫質獨立卡面・手寫星等完全精確版 (NO.001 - NO.099) ✨</p>
+        <!-- 標題 -->
+        <header class="text-center mb-4">
+            <h1 class="text-2xl md:text-3xl font-extrabold text-sky-700 tracking-tight flex items-center justify-center gap-2">
+                <span>🐱</span> 貓貓蟲咖波卡牌圖鑑 <span>🍖</span>
+            </h1>
+            <p class="text-xs text-sky-600/80 font-medium mt-1">✨ (NO.001 - NO.099) ✨</p>
         </header>
 
-        <div class="bg-white rounded-xl p-4 shadow-sm mb-5 grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-            <div class="md:col-span-2">
-                <div class="flex justify-between mb-1 font-bold text-slate-700 text-xs">
-                    <span>總收集進度</span>
-                    <span id="progress-text">0 / 99 款 (0%)</span>
+        <!-- 控制台面板 -->
+        <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-200/80 mb-5">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <!-- 左側：收集進度 -->
+                <div class="md:col-span-2">
+                    <div class="flex justify-between mb-1.5 font-bold text-slate-700 text-xs md:text-sm">
+                        <span>總收集進度</span>
+                        <span id="progress-text" class="text-sky-600 font-mono">0 / 99 款 (0%)</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden p-0.5 border border-slate-100">
+                        <div id="progress-bar" class="bg-gradient-to-r from-sky-400 to-indigo-500 h-full rounded-full transition-all duration-300 shadow-sm" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-2 flex gap-4 font-medium">
+                        <span>已收集：<strong id="unique-count" class="text-sky-600">0</strong> / 99 款</span>
+                        <span>重複多出：<strong id="duplicate-count" class="text-orange-500">0</strong> 張</span>
+                    </div>
                 </div>
-                <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                    <div id="progress-bar" class="bg-gradient-to-r from-sky-400 to-sky-500 h-full transition-all duration-300" style="width: 0%"></div>
-                </div>
-                <div class="text-[11px] text-slate-400 mt-1 flex gap-4">
-                    <span>已收集：<span id="unique-count" class="font-bold text-sky-600">0</span> 款</span>
-                    <span>重複卡：<span id="duplicate-count" class="font-bold text-orange-500">0</span> 張</span>
+
+                <!-- 右側：篩選與功能按鈕 -->
+                <div class="flex flex-col gap-2">
+                    <!-- 搜尋卡號 -->
+                    <div class="relative">
+                        <input type="text" id="search-input" placeholder="🔍 搜尋編號 (例: 007 或 7)" 
+                               class="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-400 bg-slate-50/50">
+                    </div>
+
+                    <select id="filter-type" class="w-full border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-400 bg-slate-50 cursor-pointer">
+                        <option value="all">顯示全部卡牌 (NO.001 - NO.099)</option>
+                        <optgroup label="🔍 狀態與重複篩選">
+                            <option value="owned">僅顯示：已擁有</option>
+                            <option value="missing">僅顯示：未擁有 (缺卡)</option>
+                            <option value="duplicate">僅顯示：重複卡 (交換用)</option>
+                        </optgroup>
+                        <optgroup label="🌈 依星等篩選">
+                            <option value="star-color">🌈 彩星 頂級卡</option>
+                            <option value="star-gold">👑 金星 稀有卡</option>
+                            <option value="star-silver">🪙 銀星 珍藏卡</option>
+                            <option value="star-white">⬜ 白星 常規卡</option>
+                        </optgroup>
+                        <optgroup label="✨ 經典系列 1.0 (001-035)">
+                            <option value="v1-all">1.0 全部</option>
+                            <option value="v1-role">1.0 角色卡牌</option>
+                            <option value="v1-birthday">1.0 11周年生日</option>
+                            <option value="v1-summer">1.0 夏日主題</option>
+                            <option value="v1-american">1.0 美式主題</option>
+                            <option value="v1-shop">1.0 門市滿額抽</option>
+                        </optgroup>
+                        <optgroup label="🍧 經典系列 2.0 (036-065)">
+                            <option value="v2-all">2.0 全部</option>
+                            <option value="v2-role">2.0 角色款</option>
+                            <option value="v2-taiwan">2.0 臺灣百味</option>
+                            <option value="v2-lazy">2.0 懶洋洋</option>
+                        </optgroup>
+                        <optgroup label="🤖 經典系列 3.0 (066-099)">
+                            <option value="v3-all">3.0 全部</option>
+                            <option value="v3-role">3.0 角色卡牌</option>
+                            <option value="v3-baby">3.0 BABY主題</option>
+                            <option value="v3-cyber">3.0 CyberPunCAT</option>
+                            <option value="v3-festival">3.0 祭典主題</option>
+                            <option value="v3-safari">3.0 郊遊主題</option>
+                        </optgroup>
+                    </select>
+
+                    <div class="flex gap-1.5">
+                        <button onclick="openTradeModal()" class="flex-1 text-[11px] bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-bold py-1.5 rounded-lg transition-colors">📋 交換清單</button>
+                        <button onclick="exportData()" class="flex-1 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-1.5 rounded-lg transition-colors">📤 備份</button>
+                        <button onclick="importData()" class="flex-1 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-1.5 rounded-lg transition-colors">📥 匯入</button>
+                    </div>
                 </div>
             </div>
-            
-            <div class="flex flex-col gap-2">
-                <select id="filter-type" class="w-full border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-400 bg-slate-50">
-                    <option value="all">顯示全部卡牌 (NO.001 - NO.099)</option>
-                    <optgroup label="🔍 狀態與重複篩選">
-                        <option value="owned">僅顯示：已擁有</option>
-                        <option value="missing">僅顯示：未擁有 (缺卡)</option>
-                        <option value="duplicate">🔥 僅顯示：重複的卡 (交換用)</option>
-                    </optgroup>
-                    <optgroup label="🌈 依手寫筆記星等篩選">
-                        <option value="star-color">🌈 彩星 頂級卡</option>
-                        <option value="star-gold">👑 金星 稀有卡</option>
-                        <option value="star-silver">🪙 銀星 珍藏卡</option>
-                        <option value="star-white">⬜ 白星 常規卡</option>
-                    </optgroup>
-                    <optgroup label="✨ 經典系列 1.0 (001-035)">
-                        <option value="v1-all">1.0 全部</option>
-                        <option value="v1-role">1.0 角色卡牌</option>
-                        <option value="v1-birthday">1.0 11周年生日</option>
-                        <option value="v1-summer">1.0 夏日主題</option>
-                        <option value="v1-american">1.0 美式主題</option>
-                        <option value="v1-shop">1.0 門市滿額抽</option>
-                    </optgroup>
-                    <optgroup label="🍧 經典系列 2.0 (036-065)">
-                        <option value="v2-all">2.0 全部</option>
-                        <option value="v2-role">2.0 角色款</option>
-                        <option value="v2-taiwan">2.0 臺灣百味</option>
-                        <option value="v2-lazy">2.0 懶洋洋</option>
-                    </optgroup>
-                    <optgroup label="🤖 經典系列 3.0 (066-099)">
-                        <option value="v3-all">3.0 全部</option>
-                        <option value="v3-role">3.0 角色卡牌</option>
-                        <option value="v3-baby">3.0 BABY主題</option>
-                        <option value="v3-cyber">3.0 CyberPunCAT</option>
-                        <option value="v3-festival">3.0 祭典主題</option>
-                        <option value="v3-safari">3.0 郊遊主題</option>
-                    </optgroup>
-                </select>
-                <div class="flex gap-2">
-                    <button onclick="exportData()" class="flex-1 text-[10px] bg-slate-100 text-slate-600 font-bold py-1 rounded">📤 備份代碼</button>
-                    <button onclick="importData()" class="flex-1 text-[10px] bg-slate-100 text-slate-600 font-bold py-1 rounded">📥 匯入進度</button>
-                </div>
+
+            <!-- 快捷標籤切換 -->
+            <div class="flex gap-2 mt-3 pt-3 border-t border-slate-100 overflow-x-auto text-[11px]">
+                <button onclick="setQuickFilter('all')" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 whitespace-nowrap">全部卡片</button>
+                <button onclick="setQuickFilter('missing')" class="px-2.5 py-1 rounded-full bg-red-50 text-red-600 font-bold hover:bg-red-100 whitespace-nowrap">查看缺卡 ❗</button>
+                <button onclick="setQuickFilter('duplicate')" class="px-2.5 py-1 rounded-full bg-orange-50 text-orange-600 font-bold hover:bg-orange-100 whitespace-nowrap">重複交換卡 🔥</button>
+                <button onclick="setQuickFilter('star-color')" class="px-2.5 py-1 rounded-full bg-pink-50 text-pink-600 font-bold hover:bg-pink-100 whitespace-nowrap">彩星 🌈</button>
             </div>
         </div>
 
-        <div id="cards-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+        <!-- 卡片網格 -->
+        <div id="cards-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+    </div>
+
+    <!-- 圖片點擊放大預覽 Modal -->
+    <div id="image-modal" class="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50 hidden p-4" onclick="closeModal()">
+        <div class="bg-white p-3 rounded-2xl max-w-sm w-full shadow-2xl relative" onclick="event.stopPropagation()">
+            <button onclick="closeModal()" class="absolute top-2 right-2 text-slate-400 hover:text-slate-700 font-bold text-xl px-2">✕</button>
+            <div id="modal-title" class="text-sm font-bold text-slate-700 mb-2">卡牌預覽</div>
+            <div class="w-full flex items-center justify-center p-2 bg-slate-50 rounded-xl">
+                <img id="modal-img" src="" class="max-h-[60vh] object-contain rounded-lg shadow-sm" />
             </div>
+        </div>
+    </div>
+
+    <!-- 交換清單輸出 Modal -->
+    <div id="trade-modal" class="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50 hidden p-4" onclick="closeTradeModal()">
+        <div class="bg-white p-5 rounded-2xl max-w-md w-full shadow-2xl relative flex flex-col max-h-[85vh]" onclick="event.stopPropagation()">
+            <button onclick="closeTradeModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 font-bold text-xl px-2">✕</button>
+            <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                <span>📋</span> 貓貓蟲咖波卡牌交換文字清單
+            </h3>
+            <p class="text-xs text-slate-500 mb-3">可直接複製以下文字發布至社群、FB 社團交換卡片！</p>
+            
+            <textarea id="trade-text" readonly class="w-full flex-1 min-h-[220px] p-3 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl focus:outline-none select-all text-slate-700 leading-relaxed"></textarea>
+            
+            <div class="mt-4 flex gap-2">
+                <button onclick="copyTradeText()" class="flex-1 bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 rounded-xl text-xs transition-colors shadow-sm">
+                    📋 一鍵複製交換清單
+                </button>
+                <button onclick="closeTradeModal()" class="px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 rounded-xl text-xs transition-colors">
+                    關閉
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
         const cardData = [];
-
-        // 手寫校對版星等分組
         const silvers = [72,73,75,78,79,82,83,89,95,97, 4, 10, 12, 14, 17, 20, 23, 27, 28, 33, 34, 35, 36, 39, 40, 44, 47, 51, 53, 54, 62, 65];
         const golds = [69,74,85,96, 13, 15, 16, 26, 38, 45, 55, 60, 64];
         const colors = [77, 86, 93, 42, 57];
 
         for (let i = 1; i <= 99; i++) {
             const idStr = i.toString().padStart(3, '0');
-            let gen = i <= 35 ? "v1" : (i <= 65 ? "v2" : "v3");       
-            let subType = "";   
-            let subName = "";   
-            let tagClass = "";
-            
-            let starType = "star-white";
-            let starName = "⬜ 白星 常規";
-            let starClass = "bg-slate-100 text-slate-600 border-slate-200";
+            let gen = i <= 35 ? "v1" : (i <= 65 ? "v2" : "v3");        
+            let subType = "", subName = "", tagClass = "";
+            let starType = "star-white", starName = "⬜ 白星 常規", starTag = "白星", starClass = "bg-slate-100 text-slate-600 border-slate-200";
 
             if (gen === "v1") {
                 tagClass = "bg-blue-50 text-blue-600 border-blue-100";
@@ -129,42 +188,29 @@
             }
 
             if (colors.includes(i)) {
-                starType = "star-color"; starName = "🌈 彩星 頂級"; starClass = "bg-gradient-to-r from-red-100 via-orange-100 to-yellow-100 text-red-700 border-orange-300 font-bold";
+                starType = "star-color"; starName = "🌈 彩星 頂級"; starTag = "🌈彩星"; starClass = "bg-gradient-to-r from-red-100 via-orange-100 to-yellow-100 text-red-700 border-orange-300 font-bold";
             } else if (golds.includes(i)) {
-                starType = "star-gold"; starName = "👑 金星 稀有"; starClass = "bg-amber-100 text-amber-700 border-amber-300";
+                starType = "star-gold"; starName = "👑 金星 稀有"; starTag = "👑金星"; starClass = "bg-amber-100 text-amber-800 border-amber-300 font-bold";
             } else if (silvers.includes(i)) {
-                starType = "star-silver"; starName = "🪙 銀星 珍藏"; starClass = "bg-zinc-100 text-zinc-700 border-zinc-300";
+                starType = "star-silver"; starName = "🪙 銀星 珍藏"; starTag = "🪙銀星"; starClass = "bg-slate-200 text-slate-700 border-slate-300";
             }
-
-            // 【終極大解鎖】改連線到第三方開源平台託管、100% 已人工辨認切好的 1:1 獨立高畫質卡面。永不歪斜、永不破圖！
-            const finalCloudUrl = `https://raw.githubusercontent.com/iair-bot/capoo-images/main/card_${i}.png`;
 
             cardData.push({
                 id: idStr,
-                name: `卡牌 NO.${idStr}`,
-                gen: gen,
-                subType: subType,
-                subName: subName,
-                tagClass: tagClass,
-                imgUrl: finalCloudUrl,
-                starType: starType,
-                starName: starName,
-                starClass: starClass
+                num: i,
+                name: `NO.${idStr}`,
+                gen, subType, subName, tagClass,
+                imgUrl: `https://raw.githubusercontent.com/iair-bot/capoo-images/main/card_${i}.png`,
+                starType, starName, starTag, starClass
             });
         }
 
         let myCollection = JSON.parse(localStorage.getItem('capoo_cards_ultimate_final_v100')) || {};
-        cardData.forEach(card => {
-            if (myCollection[card.id] === undefined) myCollection[card.id] = 0;
-        });
-
         const cardsGrid = document.getElementById('cards-grid');
         const filterType = document.getElementById('filter-type');
+        const searchInput = document.getElementById('search-input');
 
-        function renderCards() {
-            cardsGrid.innerHTML = '';
-            const filter = filterType.value;
-            
+        function updateSummaryStats() {
             let ownedCount = 0;
             let duplicateCount = 0;
 
@@ -179,10 +225,24 @@
             document.getElementById('progress-bar').style.width = `${percent}%`;
             document.getElementById('unique-count').innerText = ownedCount;
             document.getElementById('duplicate-count').innerText = duplicateCount;
+        }
+
+        function renderCards() {
+            cardsGrid.innerHTML = '';
+            const filter = filterType.value;
+            const searchVal = searchInput.value.trim().toLowerCase();
+
+            updateSummaryStats();
 
             cardData.forEach(card => {
                 const count = myCollection[card.id] || 0;
-                
+
+                // 搜尋關鍵字過濾
+                if (searchVal && !card.id.includes(searchVal) && !card.num.toString().includes(searchVal)) {
+                    return;
+                }
+
+                // 下拉選單過濾
                 if (filter !== 'all') {
                     if (filter === 'owned' && count === 0) return;
                     if (filter === 'missing' && count > 0) return;
@@ -191,61 +251,152 @@
                     if (filter === 'v1-all' && card.gen !== 'v1') return;
                     if (filter === 'v2-all' && card.gen !== 'v2') return;
                     if (filter === 'v3-all' && card.gen !== 'v3') return;
-                    if (!filter.startsWith('star-') && filter !== 'owned' && filter !== 'missing' && filter !== 'duplicate' && filter !== 'v1-all' && filter !== 'v2-all' && filter !== 'v3-all' && card.subType !== filter) return;
+                    if (!filter.startsWith('star-') && !['owned','missing','duplicate','v1-all','v2-all','v3-all'].includes(filter) && card.subType !== filter) return;
                 }
 
-                const isOwned = count > 0;
-                const cardEl = document.createElement('div');
-                let borderStyle = isOwned ? "border-sky-400 ring-2 ring-sky-100" : "border-slate-200";
-                const isDuplicate = count > 1;
-
-                cardEl.className = `bg-white rounded-xl shadow-sm p-2 flex flex-col justify-between border relative transition-all duration-200 ${borderStyle}`;
-                
-                cardEl.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-[10px] font-bold font-mono px-1 bg-slate-100 rounded text-slate-500">NO.${card.id}</span>
-                            <span class="text-[9px] font-bold px-1 border rounded ${card.tagClass}">${card.subName}</span>
-                        </div>
-                        <div class="text-center mb-1.5">
-                            <span class="text-[9px] font-bold px-1.5 py-0.5 border rounded-full block text-center truncate ${card.starClass}">
-                                ${card.starName}
-                            </span>
-                        </div>
-                        <div class="w-full h-32 rounded-lg mb-1.5 flex items-center justify-center overflow-hidden bg-slate-50 p-1">
-                            <img src="${card.imgUrl}" class="max-w-full max-h-full object-contain ${isOwned ? '' : 'card-gray'}" />
-                        </div>
-                    </div>
-                    
-                    <div class="mt-1 flex items-center justify-between bg-slate-50 rounded-md p-0.5">
-                        <button onclick="updateCount('${card.id}', -1)" class="w-6 h-6 rounded bg-white border border-slate-200 text-slate-600 font-bold active:scale-95 transition-all text-xs">-</button>
-                        <span class="font-bold text-xs ${count > 0 ? 'text-slate-800' : 'text-slate-300'}">${count}</span>
-                        <button onclick="updateCount('${card.id}', 1)" class="w-6 h-6 rounded bg-sky-500 text-white font-bold active:scale-95 transition-all text-xs">+</button>
-                    </div>
-                    
-                    ${isDuplicate ? `<div class="absolute -top-1 -right-1 bg-orange-500 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-full shadow-sm">多 ${count - 1}</div>` : ''}
-                `;
+                const cardEl = createCardElement(card, count);
                 cardsGrid.appendChild(cardEl);
             });
+        }
+
+        function createCardElement(card, count) {
+            const isOwned = count > 0;
+            const isDuplicate = count > 1;
+            const cardEl = document.createElement('div');
+            cardEl.id = `card-item-${card.id}`;
+
+            let borderStyle = isOwned 
+                ? (card.starType === 'star-color' ? 'border-2 card-rainbow ring-2 ring-amber-200' : (card.starType === 'star-gold' ? 'border-amber-400 ring-2 ring-amber-100 card-gold' : 'border-sky-400 ring-2 ring-sky-100'))
+                : "border-slate-200";
+
+            cardEl.className = `bg-white rounded-2xl shadow-xs p-2.5 flex flex-col justify-between border relative transition-all duration-200 hover:shadow-md select-none ${borderStyle}`;
+
+            cardEl.innerHTML = `
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="text-[11px] font-bold font-mono px-1.5 py-0.5 bg-slate-100 rounded text-slate-600">NO.${card.id}</span>
+                        <span class="text-[10px] font-bold px-1.5 py-0.5 border rounded ${card.tagClass}">${card.subName}</span>
+                    </div>
+                    <div class="text-center mb-2">
+                        <span class="text-[10px] font-semibold px-2 py-0.5 border rounded-full block text-center truncate ${card.starClass}">
+                            ${card.starName}
+                        </span>
+                    </div>
+
+                    <!-- 點擊圖片直接+1，點擊放大鏡預覽 -->
+                    <div class="relative group cursor-pointer" onclick="updateCount('${card.id}', 1)">
+                        <div class="w-full h-32 rounded-xl flex items-center justify-center overflow-hidden bg-slate-50 p-1.5 transition-transform active:scale-95">
+                            <img src="${card.imgUrl}" loading="lazy" onerror="this.src='https://via.placeholder.com/200x280?text=NO.${card.id}'"
+                                 class="max-w-full max-h-full object-contain transition-all duration-200 ${isOwned ? '' : 'card-gray'}" />
+                        </div>
+                        <button onclick="event.stopPropagation(); openModal('${card.imgUrl}', '${card.name}')" 
+                                title="放大看圖" class="absolute bottom-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] backdrop-blur-xs">
+                            🔍
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-2.5 flex items-center justify-between bg-slate-50 rounded-xl p-1 border border-slate-100">
+                    <button onclick="updateCount('${card.id}', -1)" class="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold active:scale-90 hover:bg-slate-100 transition-all text-xs flex items-center justify-center">−</button>
+                    <span id="count-val-${card.id}" class="font-mono font-bold text-xs ${count > 0 ? 'text-slate-800' : 'text-slate-300'}">${count}</span>
+                    <button onclick="updateCount('${card.id}', 1)" class="w-7 h-7 rounded-lg bg-sky-500 text-white font-bold active:scale-90 hover:bg-sky-600 transition-all text-xs flex items-center justify-center">＋</button>
+                </div>
+
+                <div id="badge-dup-${card.id}" class="${isDuplicate ? '' : 'hidden'} absolute -top-1.5 -right-1.5 bg-orange-500 text-white font-bold text-[10px] px-2 py-0.5 rounded-full shadow-sm">
+                    多 ${count - 1}
+                </div>
+            `;
+            return cardEl;
         }
 
         window.updateCount = function(id, delta) {
             let current = myCollection[id] || 0;
             current += delta;
             if (current < 0) current = 0;
-            
             myCollection[id] = current;
             localStorage.setItem('capoo_cards_ultimate_final_v100', JSON.stringify(myCollection));
+
+            const card = cardData.find(c => c.id === id);
+            const oldEl = document.getElementById(`card-item-${id}`);
+            if (oldEl && card) {
+                const newEl = createCardElement(card, current);
+                oldEl.replaceWith(newEl);
+            }
+            updateSummaryStats();
+        };
+
+        window.setQuickFilter = function(filterVal) {
+            filterType.value = filterVal;
+            searchInput.value = '';
             renderCards();
+        };
+
+        // 圖片預覽彈窗
+        window.openModal = function(url, title) {
+            document.getElementById('modal-img').src = url;
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('image-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('image-modal').classList.add('hidden');
+        };
+
+        // 交換清單功能
+        window.openTradeModal = function() {
+            const dups = [];
+            const missing = [];
+
+            cardData.forEach(card => {
+                const count = myCollection[card.id] || 0;
+                if (count > 1) {
+                    dups.push(`NO.${card.id} [${card.starTag}] x${count - 1}`);
+                } else if (count === 0) {
+                    missing.push(`NO.${card.id} [${card.starTag}]`);
+                }
+            });
+
+            let text = `【🐱 貓貓蟲咖波卡牌交換清單 🍖】\n\n`;
+            
+            text += `🔥【重複可換出】(共 ${dups.length} 款)：\n`;
+            if (dups.length > 0) {
+                text += dups.join('\n') + '\n\n';
+            } else {
+                text += `目前沒有重複的卡牌可換出～\n\n`;
+            }
+
+            text += `❗【徵求缺卡】(共 ${missing.length} 款)：\n`;
+            if (missing.length > 0) {
+                text += missing.join('\n') + '\n\n';
+            } else {
+                text += `🎉 太厲害了！已全套集齊畢業！\n\n`;
+            }
+
+            text += `歡迎私訊交換，謝謝！✨`;
+
+            document.getElementById('trade-text').value = text;
+            document.getElementById('trade-modal').classList.remove('hidden');
+        };
+
+        window.closeTradeModal = function() {
+            document.getElementById('trade-modal').classList.add('hidden');
+        };
+
+        window.copyTradeText = function() {
+            const textarea = document.getElementById('trade-text');
+            textarea.select();
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                alert("📋 交換清單已成功複製到剪貼簿！可以直接貼到社群囉！");
+            });
         };
 
         window.exportData = function() {
             const dataStr = btoa(JSON.stringify(myCollection));
-            navigator.clipboard.writeText(dataStr).then(() => alert("進度代碼已成功複製！"));
+            navigator.clipboard.writeText(dataStr).then(() => alert("🎉 進度代碼已複製到剪貼簿！"));
         };
 
         window.importData = function() {
-            const code = prompt("請貼上進度代碼：");
+            const code = prompt("請貼上備份進度代碼：");
             if (!code) return;
             try {
                 const parsed = JSON.parse(atob(code));
@@ -253,12 +404,13 @@
                     myCollection = parsed;
                     localStorage.setItem('capoo_cards_ultimate_final_v100', JSON.stringify(myCollection));
                     renderCards();
-                    alert("匯入成功！");
+                    alert("✅ 進度匯入成功！");
                 }
-            } catch (e) { alert("代碼有誤"); }
+            } catch (e) { alert("❌ 代碼格式不正確，請確認後重試！"); }
         };
 
         filterType.addEventListener('change', renderCards);
+        searchInput.addEventListener('input', renderCards);
         renderCards();
     </script>
 </body>
