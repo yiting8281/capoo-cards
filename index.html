@@ -139,7 +139,7 @@
             <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-1.5">
                 <span>📋</span> 貓貓蟲咖波卡牌交換文字清單
             </h3>
-            <p class="text-xs text-slate-500 mb-3">可直接複製以下文字發布至社群、FB 社團交換卡片！</p>
+            <p class="text-xs text-slate-500 mb-3">已依星等統整分類，可一鍵複製直接發布！</p>
             
             <textarea id="trade-text" readonly class="w-full flex-1 min-h-[220px] p-3 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl focus:outline-none select-all text-slate-700 leading-relaxed"></textarea>
             
@@ -342,37 +342,56 @@
             document.getElementById('image-modal').classList.add('hidden');
         };
 
-        // 交換清單功能
+        // 交換清單功能（依星等統合排版）
         window.openTradeModal = function() {
-            const dups = [];
-            const missing = [];
+            const starsOrder = [
+                { key: 'star-color', tag: '🌈彩星' },
+                { key: 'star-gold', tag: '👑金星' },
+                { key: 'star-silver', tag: '🪙銀星' },
+                { key: 'star-white', tag: '⬜白星' }
+            ];
+
+            const dupGroups = { 'star-color': [], 'star-gold': [], 'star-silver': [], 'star-white': [] };
+            const missGroups = { 'star-color': [], 'star-gold': [], 'star-silver': [], 'star-white': [] };
+
+            let totalDupCards = 0;
+            let totalMissKinds = 0;
 
             cardData.forEach(card => {
                 const count = myCollection[card.id] || 0;
                 if (count > 1) {
-                    dups.push(`NO.${card.id} [${card.starTag}] x${count - 1}`);
+                    const extra = count - 1;
+                    totalDupCards += extra;
+                    dupGroups[card.starType].push(`NO.${card.id}${extra > 1 ? `(x${extra})` : ''}`);
                 } else if (count === 0) {
-                    missing.push(`NO.${card.id} [${card.starTag}]`);
+                    totalMissKinds++;
+                    missGroups[card.starType].push(`NO.${card.id}`);
                 }
             });
 
             let text = `【🐱 貓貓蟲咖波卡牌交換清單 🍖】\n\n`;
-            
-            text += `🔥【重複可換出】(共 ${dups.length} 款)：\n`;
-            if (dups.length > 0) {
-                text += dups.join('\n') + '\n\n';
-            } else {
-                text += `目前沒有重複的卡牌可換出～\n\n`;
-            }
 
-            text += `❗【徵求缺卡】(共 ${missing.length} 款)：\n`;
-            if (missing.length > 0) {
-                text += missing.join('\n') + '\n\n';
-            } else {
-                text += `🎉 太厲害了！已全套集齊畢業！\n\n`;
-            }
+            text += `🔥【重複可換出】(多出 ${totalDupCards} 張)：\n`;
+            let hasDup = false;
+            starsOrder.forEach(s => {
+                if (dupGroups[s.key].length > 0) {
+                    hasDup = true;
+                    text += `[${s.tag}] ${dupGroups[s.key].join(', ')}\n`;
+                }
+            });
+            if (!hasDup) text += `目前無多餘卡牌可換出～\n`;
 
-            text += `歡迎私訊交換，謝謝！✨`;
+            text += `\n❗【徵求缺卡】(缺 ${totalMissKinds} 款)：\n`;
+            let hasMiss = false;
+            starsOrder.forEach(s => {
+                if (missGroups[s.key].length > 0) {
+                    hasMiss = true;
+                    text += `[${s.tag}] ${missGroups[s.key].join(', ')}\n`;
+                }
+            });
+            if (!hasMiss) text += `🎉 太強了！已全套集齊畢業！\n`;
+
+            text += `\n歡迎私訊交換，謝謝！✨`;
 
             document.getElementById('trade-text').value = text;
             document.getElementById('trade-modal').classList.remove('hidden');
