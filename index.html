@@ -195,12 +195,15 @@
                 starType = "star-silver"; starName = "🪙 銀星 珍藏"; starTag = "🪙銀星"; starClass = "bg-slate-200 text-slate-700 border-slate-300";
             }
 
+            // 支援本地 images 資料夾內的圖片命名 (例如: ./images/v1-1.jpg, ./images/v3-76.jpg)
+            const imgPath = `./images/${gen}-${i}.jpg`;
+
             cardData.push({
                 id: idStr,
                 num: i,
                 name: `NO.${idStr}`,
                 gen, subType, subName, tagClass,
-                imgUrl: `https://raw.githubusercontent.com/iair-bot/capoo-images/main/card_${i}.png`,
+                imgUrl: imgPath,
                 starType, starName, starTag, starClass
             });
         }
@@ -259,6 +262,15 @@
             });
         }
 
+        // 圖片載入失敗時的備援邏輯 (先嘗試 .png，若都沒有則顯示佔位圖)
+        window.handleImgError = function(img, cardId, gen, num) {
+            if (img.src.endsWith('.jpg')) {
+                img.src = `./images/${gen}-${num}.png`;
+            } else {
+                img.src = `https://via.placeholder.com/200x280?text=NO.${cardId}`;
+            }
+        };
+
         function createCardElement(card, count) {
             const isOwned = count > 0;
             const isDuplicate = count > 1;
@@ -286,10 +298,13 @@
                     <!-- 點擊圖片直接+1，點擊放大鏡預覽 -->
                     <div class="relative group cursor-pointer" onclick="updateCount('${card.id}', 1)">
                         <div class="w-full h-32 rounded-xl flex items-center justify-center overflow-hidden bg-slate-50 p-1.5 transition-transform active:scale-95">
-                            <img src="${card.imgUrl}" loading="lazy" onerror="this.src='https://via.placeholder.com/200x280?text=NO.${card.id}'"
+                            <img src="${card.imgUrl}" 
+                                 id="img-${card.id}"
+                                 loading="lazy" 
+                                 onerror="handleImgError(this, '${card.id}', '${card.gen}', ${card.num})"
                                  class="max-w-full max-h-full object-contain transition-all duration-200 ${isOwned ? '' : 'card-gray'}" />
                         </div>
-                        <button onclick="event.stopPropagation(); openModal('${card.imgUrl}', '${card.name}')" 
+                        <button onclick="event.stopPropagation(); openModal(document.getElementById('img-${card.id}').src, '${card.name}')" 
                                 title="放大看圖" class="absolute bottom-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] backdrop-blur-xs">
                             🔍
                         </button>
