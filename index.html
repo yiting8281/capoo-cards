@@ -162,6 +162,7 @@
 
         for (let i = 1; i <= 99; i++) {
             const idStr = i.toString().padStart(3, '0');
+            const pad2 = i.toString().padStart(2, '0'); // 01, 02... 09, 10
             let gen = i <= 35 ? "v1" : (i <= 65 ? "v2" : "v3");        
             let subType = "", subName = "", tagClass = "";
             let starType = "star-white", starName = "⬜ 白星 常規", starTag = "白星", starClass = "bg-slate-100 text-slate-600 border-slate-200";
@@ -195,12 +196,13 @@
                 starType = "star-silver"; starName = "🪙 銀星 珍藏"; starTag = "🪙銀星"; starClass = "bg-slate-200 text-slate-700 border-slate-300";
             }
 
-            // 支援本地 images 資料夾內的圖片命名 (例如: ./images/v1-1.jpg, ./images/v3-76.jpg)
-            const imgPath = `./images/${gen}-${i}.jpg`;
+            // 先以兩位數格式 v1-01.jpg 優先（若不是會自動在 handleImgError 遞迴嘗試）
+            const imgPath = `./images/${gen}-${pad2}.jpg`;
 
             cardData.push({
                 id: idStr,
                 num: i,
+                pad2: pad2,
                 name: `NO.${idStr}`,
                 gen, subType, subName, tagClass,
                 imgUrl: imgPath,
@@ -262,11 +264,25 @@
             });
         }
 
-        // 圖片載入失敗時的備援邏輯 (先嘗試 .png，若都沒有則顯示佔位圖)
-        window.handleImgError = function(img, cardId, gen, num) {
-            if (img.src.endsWith('.jpg')) {
+        // 智慧圖片輪詢嘗試機制：
+        // 依序嘗試：v1-01.jpg -> v1-01.png -> v1-1.jpg -> v1-1.png -> v1-001.jpg -> placeholder
+        window.handleImgError = function(img, cardId, gen, num, pad2) {
+            let step = parseInt(img.dataset.tryStep || '0', 10);
+            step++;
+            img.dataset.tryStep = step;
+
+            if (step === 1) {
+                img.src = `./images/${gen}-${pad2}.png`;
+            } else if (step === 2) {
+                img.src = `./images/${gen}-${num}.jpg`;
+            } else if (step === 3) {
                 img.src = `./images/${gen}-${num}.png`;
+            } else if (step === 4) {
+                img.src = `./images/${gen}-${cardId}.jpg`;
+            } else if (step === 5) {
+                img.src = `./images/${gen}-${cardId}.png`;
             } else {
+                img.onerror = null;
                 img.src = `https://via.placeholder.com/200x280?text=NO.${cardId}`;
             }
         };
@@ -300,8 +316,9 @@
                         <div class="w-full h-32 rounded-xl flex items-center justify-center overflow-hidden bg-slate-50 p-1.5 transition-transform active:scale-95">
                             <img src="${card.imgUrl}" 
                                  id="img-${card.id}"
+                                 data-try-step="0"
                                  loading="lazy" 
-                                 onerror="handleImgError(this, '${card.id}', '${card.gen}', ${card.num})"
+                                 onerror="handleImgError(this, '${card.id}', '${card.gen}', ${card.num}, '${card.pad2}')"
                                  class="max-w-full max-h-full object-contain transition-all duration-200 ${isOwned ? '' : 'card-gray'}" />
                         </div>
                         <button onclick="event.stopPropagation(); openModal(document.getElementById('img-${card.id}').src, '${card.name}')" 
