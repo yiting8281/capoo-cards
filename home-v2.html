@@ -1,0 +1,2117 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>貓貓蟲咖波卡牌收藏圖鑑</title>
+
+    <link rel="manifest" href="manifest.json">
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@500;600;700&display=swap');
+
+        :root {
+            --blue-deep: #31566B;
+            --blue-main: #527F96;
+            --blue-light: #DCEAF0;
+            --blue-pale: #EDF4F7;
+
+            --bg: #F3F6F7;
+            --paper: #FCFDFC;
+
+            --text: #34434A;
+            --text-light: #7A8B92;
+
+            --line: #D8E2E6;
+
+            --gold: #B89B55;
+            --silver: #87959C;
+            --rainbow: #777A9C;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Noto Sans TC', sans-serif;
+            background:
+                radial-gradient(
+                    circle at 20% 20%,
+                    rgba(82, 127, 150, 0.035) 0,
+                    transparent 35%
+                ),
+                var(--bg);
+            color: var(--text);
+        }
+
+        .serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+
+        /* =========================
+           紙張微紋理
+        ========================= */
+
+        .paper-texture {
+            background-image:
+                radial-gradient(
+                    rgba(82, 127, 150, 0.045) 0.5px,
+                    transparent 0.5px
+                );
+            background-size: 12px 12px;
+        }
+
+        /* =========================
+           Header
+        ========================= */
+
+        .main-header {
+            text-align: center;
+            padding: 28px 10px 24px;
+        }
+
+        .collection-label {
+            font-size: 10px;
+            letter-spacing: 0.28em;
+            color: var(--blue-main);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .main-title {
+            font-family: 'Noto Serif TC', serif;
+            font-size: clamp(25px, 5vw, 38px);
+            font-weight: 600;
+            color: var(--blue-deep);
+            letter-spacing: 0.06em;
+            line-height: 1.3;
+        }
+
+        .main-subtitle {
+            margin-top: 7px;
+            font-size: 11px;
+            color: var(--text-light);
+            letter-spacing: 0.16em;
+        }
+
+        .header-line {
+            width: 42px;
+            height: 2px;
+            background: var(--blue-main);
+            margin: 17px auto 0;
+            opacity: 0.7;
+        }
+
+        /* =========================
+           控制區
+        ========================= */
+
+        .control-panel {
+            background: rgba(252, 253, 253, 0.92);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 34px;
+            box-shadow: 0 4px 18px rgba(49, 86, 107, 0.045);
+        }
+
+        .section-label {
+            font-size: 9px;
+            letter-spacing: 0.2em;
+            color: var(--blue-main);
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        /* =========================
+           收藏進度
+        ========================= */
+
+        .progress-number {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 27px;
+            color: var(--blue-deep);
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .progress-number span {
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 11px;
+            color: var(--text-light);
+            font-weight: 400;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 3px;
+            background: #E7EEF1;
+            margin-top: 14px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--blue-main);
+            transition: width 0.4s ease;
+        }
+
+        .summary-text {
+            display: flex;
+            gap: 18px;
+            margin-top: 10px;
+            font-size: 10px;
+            color: var(--text-light);
+        }
+
+        .summary-text strong {
+            color: var(--blue-deep);
+            font-weight: 700;
+        }
+
+        .summary-text .duplicate {
+            color: #A47745;
+        }
+
+        /* =========================
+           搜尋與選單
+        ========================= */
+
+        .search-input,
+        .filter-select {
+            width: 100%;
+            background: #F7F9FA;
+            border: 1px solid var(--line);
+            color: var(--text);
+            border-radius: 8px;
+            outline: none;
+            transition: 0.2s ease;
+        }
+
+        .search-input {
+            padding: 9px 11px;
+            font-size: 11px;
+        }
+
+        .filter-select {
+            padding: 9px 10px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .search-input:focus,
+        .filter-select:focus {
+            border-color: var(--blue-main);
+            box-shadow: 0 0 0 2px rgba(82, 127, 150, 0.08);
+        }
+
+        /* =========================
+           快捷篩選
+        ========================= */
+
+        .quick-filter-area {
+            border-top: 1px solid #E7EDF0;
+            margin-top: 17px;
+            padding-top: 14px;
+        }
+
+        .quick-filter-title {
+            font-size: 9px;
+            letter-spacing: 0.16em;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .quick-filter {
+            border: 1px solid var(--line);
+            background: transparent;
+            color: var(--text-light);
+            border-radius: 999px;
+            padding: 5px 11px;
+            font-size: 10px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quick-filter:hover {
+            border-color: var(--blue-main);
+            color: var(--blue-deep);
+            background: var(--blue-pale);
+        }
+
+        /* =========================
+           次要功能按鈕
+        ========================= */
+
+        .utility-button {
+            flex: 1;
+            border: 1px solid var(--line);
+            background: transparent;
+            color: var(--text-light);
+            font-size: 10px;
+            padding: 7px 8px;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .utility-button:hover {
+            background: var(--blue-pale);
+            color: var(--blue-deep);
+            border-color: #BCD0D9;
+        }
+
+        .trade-button {
+            color: var(--blue-deep);
+            border-color: #BFD4DD;
+        }
+
+        /* =========================
+           系列標題
+        ========================= */
+
+        .series-heading {
+            margin: 38px 0 17px;
+            display: flex;
+            align-items: flex-end;
+            gap: 13px;
+        }
+
+        .series-number {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 28px;
+            color: var(--blue-main);
+            line-height: 1;
+        }
+
+        .series-info {
+            flex: 1;
+        }
+
+        .series-en {
+            font-size: 9px;
+            letter-spacing: 0.22em;
+            color: var(--text-light);
+            margin-bottom: 3px;
+        }
+
+        .series-title {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--blue-deep);
+        }
+
+        .series-range {
+            font-family: monospace;
+            font-size: 10px;
+            color: var(--text-light);
+            letter-spacing: 0.05em;
+        }
+
+        .series-line {
+            flex: 1;
+            height: 1px;
+            background: var(--line);
+            margin-bottom: 6px;
+        }
+
+        /* =========================
+           卡片
+        ========================= */
+
+        .card-item {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 9px;
+            position: relative;
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease,
+                border-color 0.2s ease;
+        }
+
+        .card-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(49, 86, 107, 0.08);
+            border-color: #B8CDD6;
+        }
+
+        .card-item.owned {
+            border-color: #A9C2CE;
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .card-number {
+            font-family: monospace;
+            font-size: 10px;
+            letter-spacing: 0.05em;
+            color: var(--blue-deep);
+        }
+
+        .card-series-tag {
+            font-size: 8px;
+            color: var(--text-light);
+            letter-spacing: 0.03em;
+        }
+
+        .card-image-wrap {
+            width: 100%;
+            aspect-ratio: 0.72;
+            background: #F3F6F7;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.25s ease;
+        }
+
+        .card-image-wrap:hover .card-image {
+            transform: scale(1.025);
+        }
+
+        .card-gray {
+            filter: grayscale(100%);
+            opacity: 0.25;
+        }
+
+        .preview-button {
+            position: absolute;
+            right: 6px;
+            bottom: 6px;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.7);
+            background: rgba(49, 86, 107, 0.72);
+            color: white;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: 0.2s ease;
+        }
+
+        .card-image-wrap:hover .preview-button {
+            opacity: 1;
+        }
+
+        .card-bottom {
+            margin-top: 9px;
+            padding-top: 8px;
+            border-top: 1px solid #E8EEF0;
+        }
+
+        .card-star {
+            font-size: 8px;
+            letter-spacing: 0.04em;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .card-collection {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .collection-label-small {
+            font-size: 9px;
+            color: var(--text-light);
+        }
+
+        .collection-count {
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--blue-deep);
+            font-weight: 700;
+        }
+
+        .count-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .count-button {
+            width: 23px;
+            height: 23px;
+            border-radius: 50%;
+            border: 1px solid var(--line);
+            background: #F9FBFB;
+            color: var(--text-light);
+            font-size: 13px;
+            line-height: 1;
+            cursor: pointer;
+            transition: 0.15s ease;
+        }
+
+        .count-button:hover {
+            border-color: var(--blue-main);
+            color: var(--blue-deep);
+            background: var(--blue-pale);
+        }
+
+        .count-button.add {
+            background: var(--blue-main);
+            border-color: var(--blue-main);
+            color: white;
+        }
+
+        .count-button.add:hover {
+            background: var(--blue-deep);
+        }
+
+        /* =========================
+           稀有度
+        ========================= */
+
+        .star-silver {
+            color: #718087;
+        }
+
+        .star-gold {
+            color: var(--gold);
+        }
+
+        .star-color {
+            color: var(--rainbow);
+        }
+
+        /* =========================
+           重複標記
+        ========================= */
+
+        .duplicate-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #A47745;
+            color: white;
+            font-size: 8px;
+            padding: 3px 7px;
+            border-radius: 999px;
+            box-shadow: 0 3px 8px rgba(90, 60, 30, 0.15);
+        }
+
+        /* =========================
+           Modal
+        ========================= */
+
+        .modal-overlay {
+            background: rgba(35, 53, 61, 0.72);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-paper {
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(30, 50, 60, 0.2);
+        }
+
+        .modal-title {
+            font-family: 'Noto Serif TC', serif;
+            color: var(--blue-deep);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            color: var(--text-light);
+            transition: 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--blue-deep);
+        }
+
+        .trade-textarea {
+            background: #F5F8F9;
+            border: 1px solid var(--line);
+            color: var(--text);
+            border-radius: 8px;
+            outline: none;
+        }
+
+        /* =========================
+           Mobile
+        ========================= */
+
+        @media (max-width: 640px) {
+
+            .main-header {
+                padding-top: 20px;
+                padding-bottom: 18px;
+            }
+
+            .control-panel {
+                padding: 15px;
+                margin-bottom: 25px;
+            }
+
+            .series-heading {
+                margin-top: 30px;
+            }
+
+            .series-line {
+                display: none;
+            }
+
+            .card-item {
+                padding: 7px;
+            }
+
+            .preview-button {
+                opacity: 1;
+                width: 23px;
+                height: 23px;
+            }
+
+            .summary-text {
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body class="p-3 md:p-6">
+
+<div class="max-w-6xl mx-auto">
+
+    <!-- =========================
+         Header
+    ========================= -->
+
+    <header class="main-header">
+
+        <div class="collection-label">
+            KAPOOBUG · CARD COLLECTION
+        </div>
+
+        <h1 class="main-title">
+            貓貓蟲咖波
+        </h1>
+
+        <div class="main-subtitle">
+            卡牌收藏圖鑑　·　NO.001 — NO.099
+        </div>
+
+        <div class="header-line"></div>
+
+    </header>
+
+
+    <!-- =========================
+         控制面板
+    ========================= -->
+
+    <section class="control-panel paper-texture">
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+
+            <!-- 收藏進度 -->
+
+            <div class="md:col-span-2">
+
+                <div class="section-label">
+                    COLLECTION STATUS
+                </div>
+
+                <div class="flex items-baseline gap-2">
+
+                    <div
+                        id="progress-text"
+                        class="progress-number"
+                    >
+                        0 / 99
+                    </div>
+
+                    <span>
+                        款已收藏
+                    </span>
+
+                </div>
+
+                <div class="progress-bar-bg">
+                    <div
+                        id="progress-bar"
+                        class="progress-bar-fill"
+                        style="width: 0%"
+                    ></div>
+                </div>
+
+                <div class="summary-text">
+
+                    <span>
+                        已收藏
+                        <strong id="unique-count">0</strong>
+                        / 99
+                    </span>
+
+                    <span>
+                        重複
+                        <strong
+                            id="duplicate-count"
+                            class="duplicate"
+                        >
+                            0
+                        </strong>
+                        張
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- 搜尋 -->
+
+            <div>
+
+                <div class="section-label">
+                    SEARCH & FILTER
+                </div>
+
+                <div class="flex flex-col gap-2">
+
+                    <input
+                        type="text"
+                        id="search-input"
+                        placeholder="搜尋卡號，例如 007"
+                        class="search-input"
+                    >
+
+                    <select
+                        id="filter-type"
+                        class="filter-select"
+                    >
+
+                        <option value="all">
+                            全部卡牌
+                        </option>
+
+                        <optgroup label="收藏狀態">
+
+                            <option value="owned">
+                                已擁有
+                            </option>
+
+                            <option value="missing">
+                                未擁有
+                            </option>
+
+                            <option value="duplicate">
+                                重複卡
+                            </option>
+
+                        </optgroup>
+
+                        <optgroup label="星等">
+
+                            <option value="star-color">
+                                彩星
+                            </option>
+
+                            <option value="star-gold">
+                                金星
+                            </option>
+
+                            <option value="star-silver">
+                                銀星
+                            </option>
+
+                            <option value="star-white">
+                                白星
+                            </option>
+
+                        </optgroup>
+
+                        <optgroup label="經典系列 1.0">
+
+                            <option value="v1-all">
+                                1.0 全部
+                            </option>
+
+                            <option value="v1-role">
+                                1.0 角色
+                            </option>
+
+                            <option value="v1-birthday">
+                                1.0 生日
+                            </option>
+
+                            <option value="v1-summer">
+                                1.0 夏日
+                            </option>
+
+                            <option value="v1-american">
+                                1.0 美式
+                            </option>
+
+                            <option value="v1-shop">
+                                1.0 門市抽
+                            </option>
+
+                        </optgroup>
+
+                        <optgroup label="經典系列 2.0">
+
+                            <option value="v2-all">
+                                2.0 全部
+                            </option>
+
+                            <option value="v2-role">
+                                2.0 角色
+                            </option>
+
+                            <option value="v2-taiwan">
+                                2.0 臺灣百味
+                            </option>
+
+                            <option value="v2-lazy">
+                                2.0 懶洋洋
+                            </option>
+
+                        </optgroup>
+
+                        <optgroup label="經典系列 3.0">
+
+                            <option value="v3-all">
+                                3.0 全部
+                            </option>
+
+                            <option value="v3-role">
+                                3.0 角色
+                            </option>
+
+                            <option value="v3-baby">
+                                3.0 BABY
+                            </option>
+
+                            <option value="v3-cyber">
+                                3.0 CyberPunCAT
+                            </option>
+
+                            <option value="v3-festival">
+                                3.0 祭典
+                            </option>
+
+                            <option value="v3-safari">
+                                3.0 郊遊
+                            </option>
+
+                        </optgroup>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- 快捷篩選 -->
+
+        <div class="quick-filter-area">
+
+            <div class="quick-filter-title">
+                QUICK FILTER
+            </div>
+
+            <div class="flex gap-2 overflow-x-auto">
+
+                <button
+                    onclick="setQuickFilter('all')"
+                    class="quick-filter"
+                >
+                    全部
+                </button>
+
+                <button
+                    onclick="setQuickFilter('missing')"
+                    class="quick-filter"
+                >
+                    缺卡
+                </button>
+
+                <button
+                    onclick="setQuickFilter('duplicate')"
+                    class="quick-filter"
+                >
+                    重複收藏
+                </button>
+
+                <button
+                    onclick="setQuickFilter('star-color')"
+                    class="quick-filter"
+                >
+                    彩星
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- 工具 -->
+
+        <div class="flex gap-2 mt-4">
+
+            <button
+                onclick="openTradeModal()"
+                class="utility-button trade-button"
+            >
+                交換清單
+            </button>
+
+            <button
+                onclick="exportData()"
+                class="utility-button"
+            >
+                備份收藏
+            </button>
+
+            <button
+                onclick="importData()"
+                class="utility-button"
+            >
+                匯入收藏
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         卡牌區域
+    ========================= -->
+
+    <div id="cards-container"></div>
+
+
+    <!-- 保留原本 renderCards 用的 Grid -->
+
+    <div
+        id="cards-grid"
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
+    ></div>
+
+
+</div>
+
+
+<!-- =========================
+     圖片 Modal
+========================= -->
+
+<div
+    id="image-modal"
+    class="fixed inset-0 modal-overlay flex items-center justify-center z-50 hidden p-4"
+    onclick="closeModal()"
+>
+
+    <div
+        class="modal-paper p-4 max-w-sm w-full relative"
+        onclick="event.stopPropagation()"
+    >
+
+        <button
+            onclick="closeModal()"
+            class="absolute top-3 right-3 modal-close font-bold text-lg"
+        >
+            ×
+        </button>
+
+        <div
+            id="modal-title"
+            class="modal-title mb-3"
+        >
+            卡牌預覽
+        </div>
+
+        <div class="w-full flex items-center justify-center bg-[#F3F6F7] rounded-lg p-3">
+
+            <img
+                id="modal-img"
+                src=""
+                class="max-h-[70vh] object-contain rounded"
+            >
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     交換清單 Modal
+========================= -->
+
+<div
+    id="trade-modal"
+    class="fixed inset-0 modal-overlay flex items-center justify-center z-50 hidden p-4"
+    onclick="closeTradeModal()"
+>
+
+    <div
+        class="modal-paper p-5 max-w-md w-full relative flex flex-col max-h-[85vh]"
+        onclick="event.stopPropagation()"
+    >
+
+        <button
+            onclick="closeTradeModal()"
+            class="absolute top-3 right-3 modal-close font-bold text-lg"
+        >
+            ×
+        </button>
+
+        <div class="section-label">
+            CARD TRADING
+        </div>
+
+        <h3 class="modal-title mb-1">
+            貓貓蟲咖波卡牌交換清單
+        </h3>
+
+        <p class="text-[10px] text-[#7A8B92] mb-3">
+            已依星等分類，可直接複製使用。
+        </p>
+
+        <textarea
+            id="trade-text"
+            readonly
+            class="trade-textarea w-full flex-1 min-h-[220px] p-3 text-xs leading-relaxed resize-none"
+        ></textarea>
+
+        <div class="mt-4 flex gap-2">
+
+            <button
+                onclick="copyTradeText()"
+                class="flex-1 bg-[#527F96] hover:bg-[#31566B] text-white font-semibold py-2 rounded-lg text-xs transition"
+            >
+                複製交換清單
+            </button>
+
+            <button
+                onclick="closeTradeModal()"
+                class="px-5 border border-[#D8E2E6] bg-[#F5F8F9] text-[#7A8B92] rounded-lg text-xs"
+            >
+                關閉
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /* =========================================================
+       卡牌資料
+    ========================================================= */
+
+    const cardData = [];
+
+    const silvers = [
+        72,73,75,78,79,82,83,89,95,97,
+        4,10,12,14,17,20,23,27,28,33,
+        34,35,36,39,40,44,47,51,53,54,
+        62,65
+    ];
+
+    const golds = [
+        69,74,85,96,
+        13,15,16,26,38,45,55,60,64
+    ];
+
+    const colors = [
+        77,86,93,42,57
+    ];
+
+
+    for (let i = 1; i <= 99; i++) {
+
+        const idStr = i.toString().padStart(3, '0');
+
+        const pad2 = i.toString().padStart(2, '0');
+
+        let gen =
+            i <= 35
+                ? "v1"
+                : (i <= 65 ? "v2" : "v3");
+
+        let subType = "";
+        let subName = "";
+        let tagClass = "";
+
+        let starType = "star-white";
+        let starName = "白星";
+        let starTag = "白星";
+
+        if (gen === "v1") {
+
+            if (i <= 15) {
+                subType = "v1-role";
+                subName = "1.0 角色";
+            }
+
+            else if (i <= 20) {
+                subType = "v1-birthday";
+                subName = "1.0 生日";
+            }
+
+            else if (i <= 25) {
+                subType = "v1-summer";
+                subName = "1.0 夏日";
+            }
+
+            else if (i <= 30) {
+                subType = "v1-american";
+                subName = "1.0 美式";
+            }
+
+            else {
+                subType = "v1-shop";
+                subName = "1.0 門市抽";
+            }
+
+        }
+
+        else if (gen === "v2") {
+
+            if (i <= 50) {
+                subType = "v2-role";
+                subName = "2.0 角色";
+            }
+
+            else if (i <= 60) {
+                subType = "v2-taiwan";
+                subName = "2.0 臺灣百味";
+            }
+
+            else {
+                subType = "v2-lazy";
+                subName = "2.0 懶洋洋";
+            }
+
+        }
+
+        else {
+
+            if (i <= 74) {
+                subType = "v3-role";
+                subName = "3.0 角色";
+            }
+
+            else if (i <= 85) {
+                subType = "v3-baby";
+                subName = "3.0 BABY";
+            }
+
+            else if (i <= 90) {
+                subType = "v3-cyber";
+                subName = "3.0 Cyber";
+            }
+
+            else if (i <= 95) {
+                subType = "v3-festival";
+                subName = "3.0 祭典";
+            }
+
+            else {
+                subType = "v3-safari";
+                subName = "3.0 郊遊";
+            }
+
+        }
+
+
+        /* 星等 */
+
+        if (colors.includes(i)) {
+
+            starType = "star-color";
+            starName = "彩星";
+            starTag = "彩星";
+
+        }
+
+        else if (golds.includes(i)) {
+
+            starType = "star-gold";
+            starName = "金星";
+            starTag = "金星";
+
+        }
+
+        else if (silvers.includes(i)) {
+
+            starType = "star-silver";
+            starName = "銀星";
+            starTag = "銀星";
+
+        }
+
+
+        const imgPath =
+            `./images/${gen}-${pad2}.jpg`;
+
+
+        cardData.push({
+
+            id: idStr,
+
+            num: i,
+
+            pad2: pad2,
+
+            name: `NO.${idStr}`,
+
+            gen,
+
+            subType,
+
+            subName,
+
+            imgUrl: imgPath,
+
+            starType,
+
+            starName,
+
+            starTag
+
+        });
+
+    }
+
+
+    /* =========================================================
+       收藏資料
+    ========================================================= */
+
+    let myCollection =
+        JSON.parse(
+            localStorage.getItem(
+                'capoo_cards_ultimate_final_v100'
+            )
+        ) || {};
+
+
+    const cardsGrid =
+        document.getElementById('cards-grid');
+
+    const filterType =
+        document.getElementById('filter-type');
+
+    const searchInput =
+        document.getElementById('search-input');
+
+
+    /* =========================================================
+       進度
+    ========================================================= */
+
+    function updateSummaryStats() {
+
+        let ownedCount = 0;
+
+        let duplicateCount = 0;
+
+
+        cardData.forEach(card => {
+
+            const count =
+                myCollection[card.id] || 0;
+
+
+            if (count > 0) {
+                ownedCount++;
+            }
+
+
+            if (count > 1) {
+                duplicateCount += count - 1;
+            }
+
+        });
+
+
+        const percent =
+            Math.round(
+                (ownedCount / 99) * 100
+            );
+
+
+        document
+            .getElementById('progress-text')
+            .innerHTML =
+            `${ownedCount} / 99`;
+
+
+        document
+            .getElementById('progress-bar')
+            .style.width =
+            `${percent}%`;
+
+
+        document
+            .getElementById('unique-count')
+            .innerText =
+            ownedCount;
+
+
+        document
+            .getElementById('duplicate-count')
+            .innerText =
+            duplicateCount;
+
+    }
+
+
+    /* =========================================================
+       Render
+    ========================================================= */
+
+    function renderCards() {
+
+        cardsGrid.innerHTML = '';
+
+        const filter =
+            filterType.value;
+
+        const searchVal =
+            searchInput.value
+                .trim()
+                .toLowerCase();
+
+
+        updateSummaryStats();
+
+
+        cardData.forEach(card => {
+
+            const count =
+                myCollection[card.id] || 0;
+
+
+            /* 搜尋 */
+
+            if (
+                searchVal &&
+                !card.id.includes(searchVal) &&
+                !card.num.toString().includes(searchVal)
+            ) {
+                return;
+            }
+
+
+            /* 篩選 */
+
+            if (filter !== 'all') {
+
+                if (
+                    filter === 'owned' &&
+                    count === 0
+                ) return;
+
+
+                if (
+                    filter === 'missing' &&
+                    count > 0
+                ) return;
+
+
+                if (
+                    filter === 'duplicate' &&
+                    count <= 1
+                ) return;
+
+
+                if (
+                    filter.startsWith('star-') &&
+                    card.starType !== filter
+                ) return;
+
+
+                if (
+                    filter === 'v1-all' &&
+                    card.gen !== 'v1'
+                ) return;
+
+
+                if (
+                    filter === 'v2-all' &&
+                    card.gen !== 'v2'
+                ) return;
+
+
+                if (
+                    filter === 'v3-all' &&
+                    card.gen !== 'v3'
+                ) return;
+
+
+                if (
+                    !filter.startsWith('star-') &&
+                    ![
+                        'owned',
+                        'missing',
+                        'duplicate',
+                        'v1-all',
+                        'v2-all',
+                        'v3-all'
+                    ].includes(filter) &&
+                    card.subType !== filter
+                ) return;
+
+            }
+
+
+            const cardEl =
+                createCardElement(
+                    card,
+                    count
+                );
+
+
+            cardsGrid.appendChild(cardEl);
+
+        });
+
+    }
+
+
+    /* =========================================================
+       圖片錯誤 fallback
+    ========================================================= */
+
+    window.handleImgError =
+        function (
+            img,
+            cardId,
+            gen,
+            num,
+            pad2
+        ) {
+
+            let step =
+                parseInt(
+                    img.dataset.tryStep || '0',
+                    10
+                );
+
+
+            step++;
+
+            img.dataset.tryStep =
+                step;
+
+
+            if (step === 1) {
+
+                img.src =
+                    `./images/${gen}-${pad2}.png`;
+
+            }
+
+            else if (step === 2) {
+
+                img.src =
+                    `./images/${gen}-${num}.jpg`;
+
+            }
+
+            else if (step === 3) {
+
+                img.src =
+                    `./images/${gen}-${num}.png`;
+
+            }
+
+            else if (step === 4) {
+
+                img.src =
+                    `./images/${gen}-${cardId}.jpg`;
+
+            }
+
+            else if (step === 5) {
+
+                img.src =
+                    `./images/${gen}-${cardId}.png`;
+
+            }
+
+            else {
+
+                img.onerror = null;
+
+                img.src =
+                    `https://via.placeholder.com/200x280?text=NO.${cardId}`;
+
+            }
+
+        };
+
+
+    /* =========================================================
+       卡片
+    ========================================================= */
+
+    function createCardElement(
+        card,
+        count
+    ) {
+
+        const isOwned =
+            count > 0;
+
+        const isDuplicate =
+            count > 1;
+
+
+        const cardEl =
+            document.createElement('div');
+
+
+        cardEl.id =
+            `card-item-${card.id}`;
+
+
+        cardEl.className =
+            `card-item ${isOwned ? 'owned' : ''}`;
+
+
+        let starClass =
+            '';
+
+
+        if (card.starType === 'star-silver') {
+            starClass = 'star-silver';
+        }
+
+        else if (card.starType === 'star-gold') {
+            starClass = 'star-gold';
+        }
+
+        else if (card.starType === 'star-color') {
+            starClass = 'star-color';
+        }
+
+
+        cardEl.innerHTML = `
+
+            <div class="card-top">
+
+                <span class="card-number">
+                    ${card.id}
+                </span>
+
+                <span class="card-series-tag">
+                    ${card.subName}
+                </span>
+
+            </div>
+
+
+            <div
+                class="card-image-wrap"
+                onclick="updateCount('${card.id}', 1)"
+            >
+
+                <img
+                    src="${card.imgUrl}"
+                    id="img-${card.id}"
+                    data-try-step="0"
+                    loading="lazy"
+                    onerror="handleImgError(
+                        this,
+                        '${card.id}',
+                        '${card.gen}',
+                        ${card.num},
+                        '${card.pad2}'
+                    )"
+                    class="card-image ${isOwned ? '' : 'card-gray'}"
+                >
+
+
+                <button
+                    onclick="
+                        event.stopPropagation();
+                        openModal(
+                            document.getElementById('img-${card.id}').src,
+                            '${card.name}'
+                        )
+                    "
+                    class="preview-button"
+                    title="查看卡片"
+                >
+                    ⌕
+                </button>
+
+            </div>
+
+
+            <div class="card-bottom">
+
+                <div class="card-star ${starClass}">
+                    ${card.starName}
+                </div>
+
+
+                <div class="card-collection">
+
+                    <span class="collection-label-small">
+                        收藏
+                    </span>
+
+
+                    <div class="count-controls">
+
+                        <button
+                            onclick="updateCount('${card.id}', -1)"
+                            class="count-button"
+                        >
+                            −
+                        </button>
+
+
+                        <span
+                            id="count-val-${card.id}"
+                            class="collection-count"
+                        >
+                            ${count}
+                        </span>
+
+
+                        <button
+                            onclick="updateCount('${card.id}', 1)"
+                            class="count-button add"
+                        >
+                            ＋
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="badge-dup-${card.id}"
+                class="duplicate-badge ${isDuplicate ? '' : 'hidden'}"
+            >
+                多 ${count - 1}
+            </div>
+
+        `;
+
+
+        return cardEl;
+
+    }
+
+
+    /* =========================================================
+       更新收藏數
+    ========================================================= */
+
+    window.updateCount =
+        function (
+            id,
+            delta
+        ) {
+
+            let current =
+                myCollection[id] || 0;
+
+
+            current += delta;
+
+
+            if (current < 0) {
+                current = 0;
+            }
+
+
+            myCollection[id] =
+                current;
+
+
+            localStorage.setItem(
+                'capoo_cards_ultimate_final_v100',
+                JSON.stringify(myCollection)
+            );
+
+
+            const card =
+                cardData.find(
+                    c => c.id === id
+                );
+
+
+            const oldEl =
+                document.getElementById(
+                    `card-item-${id}`
+                );
+
+
+            if (
+                oldEl &&
+                card
+            ) {
+
+                const newEl =
+                    createCardElement(
+                        card,
+                        current
+                    );
+
+
+                oldEl.replaceWith(newEl);
+
+            }
+
+
+            updateSummaryStats();
+
+        };
+
+
+    /* =========================================================
+       快速篩選
+    ========================================================= */
+
+    window.setQuickFilter =
+        function(filterVal) {
+
+            filterType.value =
+                filterVal;
+
+            searchInput.value =
+                '';
+
+            renderCards();
+
+        };
+
+
+    /* =========================================================
+       圖片 Modal
+    ========================================================= */
+
+    window.openModal =
+        function(
+            url,
+            title
+        ) {
+
+            document
+                .getElementById('modal-img')
+                .src = url;
+
+
+            document
+                .getElementById('modal-title')
+                .innerText = title;
+
+
+            document
+                .getElementById('image-modal')
+                .classList.remove('hidden');
+
+        };
+
+
+    window.closeModal =
+        function() {
+
+            document
+                .getElementById('image-modal')
+                .classList.add('hidden');
+
+        };
+
+
+    /* =========================================================
+       交換清單
+    ========================================================= */
+
+    window.openTradeModal =
+        function() {
+
+            const starsOrder = [
+
+                {
+                    key: 'star-color',
+                    tag: '彩星'
+                },
+
+                {
+                    key: 'star-gold',
+                    tag: '金星'
+                },
+
+                {
+                    key: 'star-silver',
+                    tag: '銀星'
+                },
+
+                {
+                    key: 'star-white',
+                    tag: '白星'
+                }
+
+            ];
+
+
+            const dupGroups = {
+
+                'star-color': [],
+                'star-gold': [],
+                'star-silver': [],
+                'star-white': []
+
+            };
+
+
+            const missGroups = {
+
+                'star-color': [],
+                'star-gold': [],
+                'star-silver': [],
+                'star-white': []
+
+            };
+
+
+            let totalDupCards = 0;
+
+            let totalMissKinds = 0;
+
+
+            cardData.forEach(card => {
+
+                const count =
+                    myCollection[card.id] || 0;
+
+
+                if (count > 1) {
+
+                    const extra =
+                        count - 1;
+
+
+                    totalDupCards += extra;
+
+
+                    dupGroups[
+                        card.starType
+                    ].push(
+                        `NO.${card.id}${
+                            extra > 1
+                                ? `(x${extra})`
+                                : ''
+                        }`
+                    );
+
+                }
+
+                else if (count === 0) {
+
+                    totalMissKinds++;
+
+
+                    missGroups[
+                        card.starType
+                    ].push(
+                        `NO.${card.id}`
+                    );
+
+                }
+
+            });
+
+
+            let text =
+                `【🐱 貓貓蟲咖波卡牌交換清單 🍖】\n\n`;
+
+
+            text +=
+                `【重複可換出】${totalDupCards} 張\n`;
+
+
+            let hasDup = false;
+
+
+            starsOrder.forEach(s => {
+
+                if (
+                    dupGroups[s.key].length > 0
+                ) {
+
+                    hasDup = true;
+
+
+                    text +=
+                        `[${s.tag}] ` +
+                        dupGroups[s.key].join(', ') +
+                        `\n`;
+
+                }
+
+            });
+
+
+            if (!hasDup) {
+
+                text +=
+                    `目前無多餘卡牌可換出～\n`;
+
+            }
+
+
+            text +=
+                `\n【徵求缺卡】${totalMissKinds} 款\n`;
+
+
+            let hasMiss = false;
+
+
+            starsOrder.forEach(s => {
+
+                if (
+                    missGroups[s.key].length > 0
+                ) {
+
+                    hasMiss = true;
+
+
+                    text +=
+                        `[${s.tag}] ` +
+                        missGroups[s.key].join(', ') +
+                        `\n`;
+
+                }
+
+            });
+
+
+            if (!hasMiss) {
+
+                text +=
+                    `🎉 已全套集齊！\n`;
+
+            }
+
+
+            text +=
+                `\n歡迎私訊交換，謝謝！`;
+
+
+            document
+                .getElementById('trade-text')
+                .value = text;
+
+
+            document
+                .getElementById('trade-modal')
+                .classList.remove('hidden');
+
+        };
+
+
+    window.closeTradeModal =
+        function() {
+
+            document
+                .getElementById('trade-modal')
+                .classList.add('hidden');
+
+        };
+
+
+    window.copyTradeText =
+        function() {
+
+            const textarea =
+                document.getElementById(
+                    'trade-text'
+                );
+
+
+            textarea.select();
+
+
+            navigator.clipboard
+                .writeText(
+                    textarea.value
+                )
+                .then(() => {
+
+                    alert(
+                        "交換清單已複製到剪貼簿。"
+                    );
+
+                });
+
+        };
+
+
+    /* =========================================================
+       備份
+    ========================================================= */
+
+    window.exportData =
+        function() {
+
+            const dataStr =
+                btoa(
+                    JSON.stringify(
+                        myCollection
+                    )
+                );
+
+
+            navigator.clipboard
+                .writeText(dataStr)
+                .then(() => {
+
+                    alert(
+                        "收藏進度代碼已複製到剪貼簿。"
+                    );
+
+                });
+
+        };
+
+
+    /* =========================================================
+       匯入
+    ========================================================= */
+
+    window.importData =
+        function() {
+
+            const code =
+                prompt(
+                    "請貼上備份進度代碼："
+                );
+
+
+            if (!code) {
+                return;
+            }
+
+
+            try {
+
+                const parsed =
+                    JSON.parse(
+                        atob(code)
+                    );
+
+
+                if (
+                    typeof parsed === 'object'
+                ) {
+
+                    myCollection =
+                        parsed;
+
+
+                    localStorage.setItem(
+                        'capoo_cards_ultimate_final_v100',
+                        JSON.stringify(
+                            myCollection
+                        )
+                    );
+
+
+                    renderCards();
+
+
+                    alert(
+                        "收藏進度匯入成功。"
+                    );
+
+                }
+
+            }
+
+            catch (e) {
+
+                alert(
+                    "代碼格式不正確，請確認後重試。"
+                );
+
+            }
+
+        };
+
+
+    /* =========================================================
+       事件
+    ========================================================= */
+
+    filterType.addEventListener(
+        'change',
+        renderCards
+    );
+
+
+    searchInput.addEventListener(
+        'input',
+        renderCards
+    );
+
+
+    /* =========================================================
+       初始化
+    ========================================================= */
+
+    renderCards();
+
+</script>
+
+</body>
+</html>
